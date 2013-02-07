@@ -51,6 +51,8 @@ define([
             if (has(opts, 'target')) {
                 return opts.target.trim().split(/\s+/);
             }
+
+            return [];
         }
 
         function action() {

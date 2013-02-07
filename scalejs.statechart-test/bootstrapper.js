@@ -3,10 +3,12 @@
 /// <reference path="Scripts/jasmine.js"/>
 require({
     "paths":  {
+        "jasmine": "Scripts/jasmine",
+        "jasmine-html" : "Scripts/jasmine-html",
         "linq":  "Scripts/linq",
         "scalejs":  "Scripts/scalejs-0.2.0",
         "scalejs.linq":  "Scripts/scalejs.linq-0.2.0",
-        "scalejs.statechart":  "Scripts/scalejs.statechart-0.2.0"
+        "scalejs.statechart":  "../scalejs.statechart/build/scalejs.statechart-0.2.0"
     },
     "scalejs":  {
         "extensions":  [
@@ -22,6 +24,13 @@ require({
             "deps":  [
                 "scalejs.linq"
             ]
+        },
+        "jasmine": {
+            "exports": "jasmine"
+        },
+        'jasmine-html': {
+            deps: ['jasmine'],
+            exports: 'jasmine'
         }
     }
 }, ['tests/all.tests']);

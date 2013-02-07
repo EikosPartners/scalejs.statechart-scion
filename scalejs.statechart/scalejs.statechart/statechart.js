@@ -540,7 +540,21 @@ define([
         }
 
         function getConfiguration() {
-            return enumerable.from(configuration).select('$.id').toArray();
+            var configurationIds = enumerable.from(configuration).select('$.id').toArray();
+
+            return configurationIds;
+        }
+
+        function getFullConfiguration() {
+            var configurationIds = enumerable
+                .from(configuration)
+                .selectMany(function (s) {
+                    return model.getAncestorsOrSelf(s);
+                })
+                .select('$.id')
+                .distinct();
+
+            return configurationIds;
         }
 
         function gen(evtObjOrName, optionalData) {
@@ -611,21 +625,22 @@ define([
                 log("performing initial big step");
             }
 
-            configuration.add(model.root.initial);
-
-            actions = [];
-            datamodel = {};
+            //actions = [];
+            //datamodel = {};
 
             performBigStep();
 
             return getConfiguration();
         }
 
+        configuration.push(model.root.initial);
 
         return {
             start: start,
             send: send,
-            cancel: cancel
+            cancel: cancel,
+            getConfiguration: getConfiguration,
+            getFullConfiguration: getFullConfiguration
         };
     };
 });

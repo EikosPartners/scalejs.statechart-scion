@@ -12,6 +12,7 @@
     <Content Include="Properties\build.rjs" />
     <Content Include="Properties\scalejs.statechart.nuspec" />
     <Content Include="scalejs.statechart.js" />
+    <Content Include="scalejs.statechart\stateKind.js" />
     <Content Include="scalejs.statechart\model.js" />
     <Content Include="scalejs.statechart\state.js" />
     <Content Include="scalejs.statechart\statechart.js" />

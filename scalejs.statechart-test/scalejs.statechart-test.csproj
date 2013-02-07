@@ -13,6 +13,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="bootstrapper.js" />
+    <Content Include="index.html" />
     <Content Include="Scripts\jasmine.js" />
     <Content Include="Scripts\linq-vsdoc.js" />
     <Content Include="Scripts\linq.js" />

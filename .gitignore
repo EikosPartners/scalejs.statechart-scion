@@ -1,0 +1,11 @@
+
+/packages
+/TestResults
+/scalejs.statechart.v11.suo
+/scalejs.statechart/build
+/scalejs.statechart/obj
+/scalejs.statechart/scalejs.statechart.csproj.user
+/scalejs.statechart-test/build
+/scalejs.statechart-test/obj
+/scalejs.statechart-test/scalejs.statechart-test.csproj.user
+/.nuget/nuget.exe

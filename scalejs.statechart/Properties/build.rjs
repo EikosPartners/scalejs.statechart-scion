@@ -1,0 +1,7 @@
+﻿({
+	mainConfigFile: '../bootstrapper.js',
+    include: 'scalejs.statechart',
+    exclude: [
+        'scalejs!core'
+    ]
+})

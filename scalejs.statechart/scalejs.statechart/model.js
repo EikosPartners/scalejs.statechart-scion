@@ -2,11 +2,11 @@
 define([
     'scalejs!core',
     './state',
-    './stateKind'
+    './stateKinds'
 ], function (
     core,
     state,
-    stateKind
+    stateKinds
 ) {
     'use strict';
 
@@ -72,12 +72,13 @@ define([
             //Two control states are orthogonal if they are not ancestrally
             //related, and their smallest, mutual parent is a Concurrent-state.
             return !isAncestrallyRelatedTo(s1, s2) &&
-                   getLCA(s1, s2).kind === stateKind.PARALLEL;
+                   getLCA(s1, s2).kind === stateKinds.PARALLEL;
         }
 
 
         root = state(spec, [], context);
 
+        // convert stateIds to states
         array.iter(context.states, function (s) {
             s.ancestors.reverse();
             s.descendants.reverse();
@@ -88,20 +89,10 @@ define([
             s.parent = stateById(s.parent);
             s.ancestors = array.map(s.ancestors, stateById);
             s.descendants = array.map(s.descendants, stateById);
-            /*
-            array.iter(s.transitions, function (transitionId) {
-                var t = context.transitions
-                t.source = stateById(t.source);
-                t.targets = array.map(t.targets, function (targetId) {
-                    var target = stateById(targetId);
-                    if (!has(target)) {
-                        throw new Error('Transition targets state "' + targetId + '" but such state doesn\'t exist.');
-                    }
-                    return target;
-                });
-            });*/
+            s.transitions = array.map(s.transitions, function (t) { return context.transitions[t]; });
         });
 
+        // also for transitions
         array.iter(context.transitions, function (t) {
             t.source = stateById(t.source);
             t.targets = array.map(t.targets, function (targetId) {
@@ -111,21 +102,17 @@ define([
                 }
                 return target;
             });
-        });
 
-        // for every transition set it's LCA
-        enumerable
-            .from(context.transitions)
-            .where(function (t) {
-                return has(t, 'targets');
-            })
-            .forEach(function (t) {
+            if (t.targets.length > 0) {
                 t.lca = getLCA(t.source, t.targets[0]);
-            });
+            }
+        });
 
         return {
             root: root,
-            getLCA: getLCA
+            getLCA: getLCA,
+            getAncestors: getAncestors,
+            getAncestorsOrSelf: getAncestorsOrSelf
         };
     };
 });

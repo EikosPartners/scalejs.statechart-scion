@@ -1,5 +1,15 @@
 
 /*global define,setTimeout,clearTimeout*/
+define('scalejs.statechart/stateKinds',{
+    BASIC: 0,
+    COMPOSITE: 1,
+    PARALLEL: 2,
+    HISTORY: 3,
+    INITIAL: 4,
+    FINAL: 5
+});
+
+/*global define,setTimeout,clearTimeout*/
 define('scalejs.statechart/transition',[
     'scalejs!core'
 ], function (
@@ -52,6 +62,8 @@ define('scalejs.statechart/transition',[
             if (has(opts, 'target')) {
                 return opts.target.trim().split(/\s+/);
             }
+
+            return [];
         }
 
         function action() {
@@ -78,9 +90,11 @@ define('scalejs.statechart/transition',[
 /*global define,setTimeout,clearTimeout*/
 define('scalejs.statechart/state',[
     'scalejs!core',
+    './stateKinds',
     './transition'
 ], function (
     core,
+    stateKinds,
     transition
 ) {
     
@@ -88,57 +102,63 @@ define('scalejs.statechart/state',[
     var // imports
         has = core.object.has,
         enumerable = core.linq.enumerable,
-        array = core.array,
-        // vars
-        uniqueId = 0,
-        stateKinds = {
-            BASIC: 0,
-            COMPOSITE: 1,
-            PARALLEL: 2,
-            HISTORY: 3,
-            INITIAL: 4,
-            FINAL: 5
-        };
+        array = core.array;
 
-    return function state(opts, ancestors, context) {
-        var self = {};
+    return function state(spec, ancestors, context) {
+        var self = {},
+            uniqueIds = {};
+
+        function genId(group) {
+            var latestId = uniqueIds[group] || 0,
+                nextId = latestId + 1,
+                id = group + '_' + nextId;
+
+            uniqueIds[group] = nextId;
+
+            return id;
+        }
 
         function id() {
-            var stateId;
+            var stateId,
+                latestId;
 
-            if (has(opts, 'id')) {
-                if (context.idToStateMap.hasOwnProperty(opts.id)) {
+            if (has(spec, 'id')) {
+                if (context.idToStateMap.hasOwnProperty(spec.id)) {
                     throw {
                         name: 'Illegal Argument',
-                        message: 'Duplicate state id `' + opts.id + '`. State id-s must be unique.'
+                        message: 'Duplicate state id `' + spec.id + '`. State id-s must be unique.'
                     };
                 }
-                stateId = opts.id;
+                stateId = spec.id;
             } else {
-                uniqueId += 1;
-                stateId = uniqueId;
+                stateId = genId(spec.initial === true ? 'initial' : 'state');
             }
 
             context.idToStateMap[stateId] = self;
+
+            return stateId;
         }
 
         function kind() {
-            if (has(state, 'states')) {
+            if (has(spec, 'states')) {
                 return stateKinds.COMPOSITE;
             }
 
-            if (state.parallel) {
+            if (spec.parallel) {
                 return stateKinds.PARALLEL;
             }
 
-            if (state.history) {
+            if (spec.history) {
                 return stateKinds.HISTORY;
             }
 
-            if (state.initial) {
+            // spec.initial maybe a boolean indicating the state is initial on the parent,
+            // or a string indicating an id of the child state that should be initial
+            // Therefore state is initial only if the flag is boolean and is true
+            if (spec.initial === true) {
                 return stateKinds.INITIAL;
             }
-            if (state.final) {
+            if (spec.final) {
                 return stateKinds.FINAL;
             }
 
@@ -146,12 +166,12 @@ define('scalejs.statechart/state',[
         }
 
         function transitions() {
-            if (!has(opts, 'transitions')) {
+            if (!has(spec, 'transitions')) {
                 return [];
             }
 
             var transitionIds = enumerable
-                .from(opts.transitions)
+                .from(spec.transitions)
                 .select(function (t) {
                     var trans = transition(t, self, context);
                     return trans.id;
@@ -181,26 +201,63 @@ define('scalejs.statechart/state',[
         }
 
         function children() {
-            if (!has(opts, 'states')) {
+            if (!has(spec, 'states')) {
                 return [];
             }
 
-            var states = enumerable
-                .from(opts.children)
-                .select(function (child) {
-                    return state(child, context);
-                })
-                .toArray();
+            var nextAncestors = ancestors.concat(self.id),
+                states = enumerable
+                    .from(spec.states)
+                    .select(function (child) {
+                        var st = state(child, nextAncestors, context);
+                        return st.id;
+                    })
+                    .toArray();
 
             return states;
         }
 
+        function initial() {
+            var generatedInitial,
+                generatedInitialId,
+                initials = array.filter(self.children, function (s) {
+                    return s.kind === stateKinds.INITIAL;
+                });
+
+            if (initials.length > 1) {
+                throw new Error('Duplicate initial states in state "' + self.id + '".');
+            }
+
+            if (initials.length === 1) {
+                return initials[0].id;
+            }
+
+            // parallel states and states with no children don't have initial.
+            if (self.kind === stateKinds.PARALLEL ||
+                    self.children.length === 0) {
+                return undefined;
+            }
+
+            generatedInitialId = spec.initial || self.children[0];
+            generatedInitial = state({
+                initial: true,
+                transitions: [{
+                    target: generatedInitialId
+                }]
+            }, ancestors.concat(self.id), context);
+            self.children.push(generatedInitial);
+
+            return generatedInitial.id;
+        }
+
         self.id = id();
         self.kind = kind();
+        self.descendants = [];
         self.children = children();
         self.transitions = transitions();
-        self.onEntry = opts.onEntry;
-        self.onExit = opts.onExit;
+        self.initial = initial();
+        self.onEntry = spec.onEntry;
+        self.onExit = spec.onExit;
         self.parent = parent();
         self.documentOrder = documentOrder();
         self.basicDocumentOrder = basicDocumentOrder();
@@ -220,16 +277,19 @@ define('scalejs.statechart/state',[
 /*global define,setTimeout,clearTimeout*/
 define('scalejs.statechart/model',[
     'scalejs!core',
-    './state'
+    './state',
+    './stateKinds'
 ], function (
     core,
-    state
+    state,
+    stateKinds
 ) {
     
 
     var // imports
         has = core.object.has,
-        enumerable = core.linq.enumerable;
+        enumerable = core.linq.enumerable,
+        array = core.array;
 
     return function model(spec) {
         // Creation context that tracks everything created while creating the state.
@@ -242,10 +302,91 @@ define('scalejs.statechart/model',[
                 idToStateMap: {},
                 onFoundStateIdCallbacks: []
             },
-            root = state(spec, [], context);
+            root;
+
+        function stateById(stateId) {
+            return context.idToStateMap[stateId];
+        }
+
+        function getAncestors(s, root) {
+            var ancestors,
+                index,
+                state;
+
+            index = s.ancestors.indexOf(root);
+            if (index > -1) {
+                return s.ancestors.slice(0, index);
+            }
+            return s.ancestors;
+        }
+
+        function getAncestorsOrSelf(s, root) {
+            return [s].concat(getAncestors(s, root));
+        }
+
+        function getDescendantsOrSelf(s) {
+            return [s].concat(s.descendants);
+        }
+
+        function isAncestrallyRelatedTo(s1, s2) {
+            //Two control states are ancestrally related if one is child/grandchild of another.
+            return getAncestorsOrSelf(s2).indexOf(s1) > -1 ||
+                   getAncestorsOrSelf(s1).indexOf(s2) > -1;
+        }
+
+        function getLCA(s1, s2) {
+            var lca = enumerable
+                .from(getAncestors(s1))
+                .firstOrDefault(null, function (a) {
+                    return a.descendants.indexOf(s2) > -1;
+                });
+
+            return lca;
+        }
+
+        function isOrthogonalTo(s1, s2) {
+            //Two control states are orthogonal if they are not ancestrally
+            //related, and their smallest, mutual parent is a Concurrent-state.
+            return !isAncestrallyRelatedTo(s1, s2) &&
+                   getLCA(s1, s2).kind === stateKinds.PARALLEL;
+        }
+
+
+        root = state(spec, [], context);
+
+        // convert stateIds to states
+        array.iter(context.states, function (s) {
+            s.ancestors.reverse();
+            s.descendants.reverse();
+            // resolve states
+            s.initial = stateById(s.initial);
+            s.history = stateById(s.history);
+            s.children = array.map(s.children, stateById);
+            s.parent = stateById(s.parent);
+            s.ancestors = array.map(s.ancestors, stateById);
+            s.descendants = array.map(s.descendants, stateById);
+        });
+
+        // also for transitions
+        array.iter(context.transitions, function (t) {
+            t.source = stateById(t.source);
+            t.targets = array.map(t.targets, function (targetId) {
+                var target = stateById(targetId);
+                if (!has(target)) {
+                    throw new Error('Transition targets state "' + targetId + '" but such state doesn\'t exist.');
+                }
+                return target;
+            });
+
+            if (t.targets.length > 0) {
+                t.lca = getLCA(t.source, t.targets[0]);
+            }
+        });
 
         return {
-            root: root
+            root: root,
+            getLCA: getLCA,
+            getAncestorsOrSelf: getAncestorsOrSelf
         };
     };
 });
@@ -254,26 +395,19 @@ define('scalejs.statechart/model',[
 /*global define,setTimeout,clearTimeout*/
 define('scalejs.statechart/statechart',[
     'scalejs!core',
-    './model'
+    './model',
+    './stateKinds'
 ], function (
     core,
-    stateChartModel
+    stateChartModel,
+    stateKinds
 ) {
     
 
     var // imports
         log = core.log.debug,
         array = core.array,
-        enumerable = core.linq.enumerable,
-        // static
-        stateKinds = {
-            BASIC: 0,
-            COMPOSITE: 1,
-            PARALLEL: 2,
-            HISTORY: 3,
-            INITIAL: 4,
-            FINAL: 5
-        };
+        enumerable = core.linq.enumerable;
 
     function getTransitionWithHigherSourceChildPriority() {
         return function (arg) {
@@ -309,7 +443,7 @@ define('scalejs.statechart/statechart',[
             priorityComparisonFn = getTransitionWithHigherSourceChildPriority(model),
             configuration = [],
             historyValue,
-            innerEventQueue,
+            innerEventQueue = [],
             isInFinalState = false,
             timeoutMap = {},
             listeners = [],
@@ -793,7 +927,22 @@ define('scalejs.statechart/statechart',[
         }
 
         function getConfiguration() {
-            return enumerable.from(configuration).select('$.id').toArray();
+            var configurationIds = enumerable.from(configuration).select('$.id').toArray();
+
+            return configurationIds;
+        }
+
+        function getFullConfiguration() {
+            var configurationIds = enumerable
+                .from(configuration)
+                .selectMany(function (s) {
+                    return model.getAncestorsOrSelf(s);
+                })
+                .select('$.id')
+                .distinct()
+                .toArray();
+
+            return configurationIds;
         }
 
         function gen(evtObjOrName, optionalData) {
@@ -864,21 +1013,19 @@ define('scalejs.statechart/statechart',[
                 log("performing initial big step");
             }
 
-            configuration.add(model.root.initial);
-
-            actions = [];
-            datamodel = {};
-
             performBigStep();
 
             return getConfiguration();
         }
 
+        configuration.push(model.root.initial || model.root);
 
         return {
             start: start,
             send: send,
-            cancel: cancel
+            cancel: cancel,
+            getConfiguration: getConfiguration,
+            getFullConfiguration: getFullConfiguration
         };
     };
 });

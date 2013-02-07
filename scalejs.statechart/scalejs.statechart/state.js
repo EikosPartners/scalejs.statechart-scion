@@ -1,11 +1,11 @@
 ﻿/*global define,setTimeout,clearTimeout*/
 define([
     'scalejs!core',
-    './stateKind',
+    './stateKinds',
     './transition'
 ], function (
     core,
-    stateKind,
+    stateKinds,
     transition
 ) {
     'use strict';
@@ -52,28 +52,28 @@ define([
 
         function kind() {
             if (has(spec, 'states')) {
-                return stateKind.COMPOSITE;
+                return stateKinds.COMPOSITE;
             }
 
             if (spec.parallel) {
-                return stateKind.PARALLEL;
+                return stateKinds.PARALLEL;
             }
 
             if (spec.history) {
-                return stateKind.HISTORY;
+                return stateKinds.HISTORY;
             }
 
             // spec.initial maybe a boolean indicating the state is initial on the parent,
             // or a string indicating an id of the child state that should be initial
             // Therefore state is initial only if the flag is boolean and is true
             if (spec.initial === true) {
-                return stateKind.INITIAL;
+                return stateKinds.INITIAL;
             }
             if (spec.final) {
-                return stateKind.FINAL;
+                return stateKinds.FINAL;
             }
 
-            return stateKind.BASIC;
+            return stateKinds.BASIC;
         }
 
         function transitions() {
@@ -102,9 +102,9 @@ define([
         }
 
         function basicDocumentOrder() {
-            if (self.kind === stateKind.BASIC ||
-                    self.kind === stateKind.INITIAL ||
-                        self.kind === stateKind.HISTORY) {
+            if (self.kind === stateKinds.BASIC ||
+                    self.kind === stateKinds.INITIAL ||
+                        self.kind === stateKinds.HISTORY) {
                 context.basicStates.push(self);
 
                 return context.basicStates.length - 1;
@@ -132,7 +132,7 @@ define([
             var generatedInitial,
                 generatedInitialId,
                 initials = array.filter(self.children, function (s) {
-                    return s.kind === stateKind.INITIAL;
+                    return s.kind === stateKinds.INITIAL;
                 });
 
             if (initials.length > 1) {
@@ -144,7 +144,7 @@ define([
             }
 
             // parallel states and states with no children don't have initial.
-            if (self.kind === stateKind.PARALLEL ||
+            if (self.kind === stateKinds.PARALLEL ||
                     self.children.length === 0) {
                 return undefined;
             }

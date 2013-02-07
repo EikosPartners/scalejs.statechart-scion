@@ -1,26 +1,19 @@
 ﻿/*global define,setTimeout,clearTimeout*/
 define([
     'scalejs!core',
-    './model'
+    './model',
+    './stateKinds'
 ], function (
     core,
-    stateChartModel
+    stateChartModel,
+    stateKinds
 ) {
     'use strict';
 
     var // imports
         log = core.log.debug,
         array = core.array,
-        enumerable = core.linq.enumerable,
-        // static
-        stateKinds = {
-            BASIC: 0,
-            COMPOSITE: 1,
-            PARALLEL: 2,
-            HISTORY: 3,
-            INITIAL: 4,
-            FINAL: 5
-        };
+        enumerable = core.linq.enumerable;
 
     function getTransitionWithHigherSourceChildPriority() {
         return function (arg) {
@@ -56,7 +49,7 @@ define([
             priorityComparisonFn = getTransitionWithHigherSourceChildPriority(model),
             configuration = [],
             historyValue,
-            innerEventQueue,
+            innerEventQueue = [],
             isInFinalState = false,
             timeoutMap = {},
             listeners = [],
@@ -107,26 +100,17 @@ define([
                 }
             }
 
-            consistentTransitions = transitions.difference(allInconsistentTransitions);
+            consistentTransitions = transitions.except(allInconsistentTransitions);
             return [consistentTransitions, inconsistentTransitionsPairs];
         }
 
         function selectPriorityEnabledTransitions(enabledTransitions) {
-            var priorityEnabledTransitions = [],
+            var priorityEnabledTransitions = enabledTransitions.toArray(),
                 tuple = getInconsistentTransitions(enabledTransitions),
                 consistentTransitions = tuple[0],
                 inconsistentTransitionsPairs = tuple[1];
 
-            priorityEnabledTransitions.union(consistentTransitions);
-
-            if (printTrace) {
-                log("enabledTransitions", enabledTransitions);
-                log("consistentTransitions", consistentTransitions);
-                log("inconsistentTransitionsPairs", inconsistentTransitionsPairs);
-                log("priorityEnabledTransitions", priorityEnabledTransitions);
-            }
-
-            while (!inconsistentTransitionsPairs.isEmpty()) {
+            while (inconsistentTransitionsPairs.length > 0) {
                 enabledTransitions = enumerable
                     .from(inconsistentTransitionsPairs)
                     .select(priorityComparisonFn);
@@ -135,14 +119,10 @@ define([
                 consistentTransitions = tuple[0];
                 inconsistentTransitionsPairs = tuple[1];
 
-                priorityEnabledTransitions.union(consistentTransitions);
-
-                if (printTrace) {
-                    log("enabledTransitions", enabledTransitions);
-                    log("consistentTransitions", consistentTransitions);
-                    log("inconsistentTransitionsPairs", inconsistentTransitionsPairs);
-                    log("priorityEnabledTransitions", priorityEnabledTransitions);
-                }
+                priorityEnabledTransitions = enumerable
+                    .from(priorityEnabledTransitions)
+                    .union(consistentTransitions)
+                    .toArray();
             }
 
             return priorityEnabledTransitions;
@@ -190,9 +170,10 @@ define([
                 states = enumerable.from(configuration);
             } else {
                 states = enumerable.from(configuration)
-                    .selectMany(function (basicState) {
-                        var ancestors = model.getAncestors(basicState);
-                        return enumerable.returnValue(basicState).concat(ancestors);
+                    .selectMany(function (s) {
+                        return model.getAncestorsOrSelf(s);
+                        //var ancestors = model.getAncestors(basicState);
+                        //return enumerable.returnValue(basicState).concat(ancestors);
                     });
             }
 
@@ -217,10 +198,6 @@ define([
 
             priorityEnabledTransitions = selectPriorityEnabledTransitions(enabledTransitions);
 
-            if (printTrace) {
-                log("priorityEnabledTransitions", priorityEnabledTransitions);
-            }
-
             return priorityEnabledTransitions;
         }
 
@@ -235,10 +212,10 @@ define([
 
                 array.iter(configuration, function (state) {
                     if (desc.indexOf(state) > -1) {
-                        basicStatesExited.add(state);
-                        statesExited.add(state);
+                        array.addOne(basicStatesExited, state);
+                        array.addOne(statesExited, state);
                         array.iter(model.getAncestors(state, lca), function (anc) {
-                            statesExited.add(anc);
+                            array.addOne(statesExited, anc);
                         });
                     }
                 });
@@ -254,7 +231,7 @@ define([
 
         function evaluateAction(actionRef, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
             function $raise(event) {
-                eventsToAddToInnerQueue.add(event);
+                array.addOne(eventsToAddToInnerQueue, event);
             }
 
             var n = getScriptingInterface(datamodelForNextStep, eventSet, true);
@@ -281,9 +258,9 @@ define([
                     if (s.kind === stateKinds.COMPOSITE) {
                         //just add him to statesToEnter, and declare him processed
                         //this is to prevent adding his initial state later on
-                        statesToEnter.add(s);
+                        array.addOne(statesToEnter, s);
 
-                        statesProcessed.add(s);
+                        array.addOne(statesProcessed, s);
                     } else {
                         //everything else can just be passed through as normal
                         processState(s);
@@ -292,7 +269,7 @@ define([
             };
 
             processState = function (s) {
-                if (statesProcessed.contains(s)) {
+                if (array.indexOf(statesProcessed, s) > -1) {
                     return;
                 }
 
@@ -302,11 +279,11 @@ define([
                             processTransitionSourceAndTarget(s, stateFromHistory);
                         });
                     } else {
-                        statesToEnter.add(s);
-                        basicStatesToEnter.add(s);
+                        array.addOne(statesToEnter, s);
+                        array.addOne(basicStatesToEnter, s);
                     }
                 } else {
-                    statesToEnter.add(s);
+                    array.addOne(statesToEnter, s);
 
                     if (s.kind === stateKinds.PARALLEL) {
                         statesToProcess.push.apply(statesToProcess,
@@ -316,16 +293,16 @@ define([
                     } else if (s.kind === stateKinds.COMPOSITE) {
                         statesToProcess.push(s.initial);
                     } else if (s.kind === stateKinds.INITIAL || s.kind === stateKinds.BASIC || s.kind === stateKinds.FINAL) {
-                        basicStatesToEnter.add(s);
+                        array.addOne(basicStatesToEnter, s);
                     }
                 }
 
-                statesProcessed.add(s);
+                array.addOne(statesProcessed, s);
             };
 
             //do the initial setup
-            transitions.iter().forEach(function (transition) {
-                transition.targets.forEach(function (target) {
+            array.iter(transitions, function (transition) {
+                array.iter(transition.targets, function (target) {
                     processTransitionSourceAndTarget(transition.source, target);
                 });
             });
@@ -336,9 +313,10 @@ define([
             }
 
             //sort based on depth
-            sortedStatesEntered = statesToEnter.iter().sort(function (s1, s2) {
+            sortedStatesEntered = enumerable.from(statesToEnter).orderBy('$.depth').toArray();
+/*            sortedStatesEntered = statesToEnter.iter().sort(function (s1, s2) {
                 return s1.depth - s2.depth;
-            });
+            }); */
 
             return [basicStatesToEnter, sortedStatesEntered];
         }
@@ -362,11 +340,7 @@ define([
 
             selectedTransitions = selectTransitions(eventSet, datamodelForNextStep);
 
-            if (printTrace) {
-                log("selected transitions: ", selectedTransitions);
-            }
-
-            if (!selectedTransitions.isEmpty()) {
+            if (selectedTransitions.length > 0) {
                 if (printTrace) {
                     log("sorted transitions: ", selectedTransitions);
                 }
@@ -375,7 +349,8 @@ define([
                 //filter out targetless transitions here - we will only use these to execute transition actions
                 selectedTransitionsWithTargets = enumerable
                     .from(selectedTransitions)
-                    .where('$.targets');
+                    .where('$.targets')
+                    .toArray();
 
                 exitedTuple = getStatesExited(selectedTransitionsWithTargets);
                 basicStatesExited = exitedTuple[0];
@@ -434,17 +409,18 @@ define([
 
                 // -> Concurrency: Number of transitions: Multiple
                 // -> Concurrency: Order of transitions: Explicitly defined
-                sortedTransitions = selectedTransitions.iter().sort(function (t1, t2) {
+                sortedTransitions = enumerable.from(selectedTransitions).orderBy('$.documentOrder').toArray();
+                /*sortedTransitions = selectedTransitions.iter().sort(function (t1, t2) {
                     return t1.documentOrder - t2.documentOrder;
-                });
+                });*/
 
                 if (printTrace) {
                     log("executing transitition actions");
                 }
 
 
-                sortedTransitions.forEach(function (transition) {
-                    var targetIds = transition.targets && enumerable.from(transition.targets).select('$.id').toArray();
+                array.iter(sortedTransitions, function (transition) {
+                    var targetIds = enumerable.from(transition.targets).select('$.id').toArray();
 
                     array.iter(listeners, function (l) {
                         if (l.onTransition) {
@@ -483,15 +459,18 @@ define([
                 }
 
                 //update configuration by removing basic states exited, and adding basic states entered
-                configuration.difference(basicStatesExited);
-                configuration.union(basicStatesEntered);
+                configuration = enumerable
+                    .from(configuration)
+                    .except(basicStatesExited)
+                    .union(basicStatesEntered)
+                    .toArray();
 
                 if (printTrace) {
                     log("new configuration ", configuration);
                 }
 
                 //add set of generated events to the innerEventQueue -> Event Lifelines: Next small-step
-                if (!eventsToAddToInnerQueue.isEmpty()) {
+                if (eventsToAddToInnerQueue.length > 0) {
                     if (printTrace) {
                         log("adding triggered events to inner queue ", eventsToAddToInnerQueue);
                     }
@@ -531,10 +510,10 @@ define([
                 //create new datamodel cache for the next small step
                 datamodelForNextStep = {};
                 selectedTransitions = performSmallStep(eventSet, datamodelForNextStep);
-                keepGoing = !selectedTransitions.isEmpty();
+                keepGoing = enumerable.from(selectedTransitions).any();
             }
 
-            isInFinalState = configuration.iter().every(function (s) {
+            isInFinalState = enumerable.from(configuration).all(function (s) {
                 return s.kind === stateKinds.FINAL;
             });
         }
@@ -552,7 +531,8 @@ define([
                     return model.getAncestorsOrSelf(s);
                 })
                 .select('$.id')
-                .distinct();
+                .distinct()
+                .toArray();
 
             return configurationIds;
         }
@@ -625,15 +605,12 @@ define([
                 log("performing initial big step");
             }
 
-            //actions = [];
-            //datamodel = {};
-
             performBigStep();
 
             return getConfiguration();
         }
 
-        configuration.push(model.root.initial);
+        configuration.push(model.root.initial || model.root);
 
         return {
             start: start,

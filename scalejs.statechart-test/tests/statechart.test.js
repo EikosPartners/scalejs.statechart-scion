@@ -14,43 +14,38 @@ define([
             });
         });
 
-        describe('creation', function () {
-            it('empty', function () {
-                var sc = statechart({
-                    id: 'root'
+        it('transits to default single state', function () {
+            var inS1 = false,
+                sc = statechart({
+                    id: 'root',
+                    states: [{
+                        id: 's1',
+                        onEntry: function (context) {
+                            inS1 = true;
+                        }
+                    }]
                 });
-                expect(sc.getFullConfiguration()).toEqual(['root']);
-            });
-            
-            it('no initial state is specified', function () {
-                var sc = statechart({
-                        id: 'root',
-                        states: [{
-                            id: 's1',
-                        }]
-                    });
-                expect(sc.getFullConfiguration()).toEqual(['initial_1', 'root']);
-            });
+            sc.start();
+
+            expect(sc.getFullConfiguration()).toEqual(['s1', 'root']);
         });
 
-        describe('transitions', function () {
-            it('single state', function () {
-                var inS1 = false;
-                    sc = statechart({
-                        id: 'root',
-                        states: [{
-                            id: 's1',
-                            onEntry: function (context) {
-                                inS1 = true;
-                            }
-                        }]
-                    });
-                sc.start();
+        it('executes onEntry', function () {
+            var inS1 = false,
+                sc = statechart({
+                    id: 'root',
+                    states: [{
+                        id: 's1',
+                        onEntry: function (context) {
+                            inS1 = true;
+                        }
+                    }]
+                });
+            sc.start();
 
-                //expect(sc.getFullConfiguration()).toEqual(['initial_1', 'root']);
-                expect(inS1).toBeTruthy();
-            });
-
+            expect(sc.getFullConfiguration()).toEqual(['s1', 'root']);
+            //expect(sc.getFullConfiguration()).toEqual(['initial_1', 'root']);
+            expect(inS1).toBeTruthy();
         });
     });
 });

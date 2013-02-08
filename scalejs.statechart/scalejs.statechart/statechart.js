@@ -2,10 +2,12 @@
 define([
     'scalejs!core',
     './model',
+    './builder',
     './stateKinds'
 ], function (
     core,
-    stateChartModel,
+    model,
+    stateChartBuilder,
     stateKinds
 ) {
     'use strict';
@@ -45,7 +47,7 @@ define([
 
 
     return function create(spec) {
-        var model = stateChartModel(spec),
+        var builder = stateChartBuilder(),
             priorityComparisonFn = getTransitionWithHigherSourceChildPriority(model),
             configuration = [],
             historyValue,
@@ -61,21 +63,8 @@ define([
             onlySelectFromBasicStates = false,
             logStatesEnteredAndExited = false;
 
-        function isArenaOrthogonal(t1, t2) {
-            var t1LCA = t1.targets ? t1.lca : t1.source,
-                t2LCA = t2.targets ? t2.lca : t2.source,
-                isOrthogonal = model.isOrthogonalTo(t1LCA, t2LCA);
-
-            if (printTrace) {
-                log("transition LCAs", t1LCA.id, t2LCA.id);
-                log("transition LCAs are orthogonal?", isOrthogonal);
-            }
-
-            return isOrthogonal;
-        }
-
         function conflicts(t1, t2) {
-            return !isArenaOrthogonal(t1, t2);
+            return !model.isArenaOrthogonal(t1, t2);
         }
 
         function getInconsistentTransitions(transitions) {
@@ -229,13 +218,13 @@ define([
             return [basicStatesExited, sortedStatesExited];
         }
 
-        function evaluateAction(actionRef, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
+        function evaluateAction(action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
             function $raise(event) {
                 array.addOne(eventsToAddToInnerQueue, event);
             }
 
             var n = getScriptingInterface(datamodelForNextStep, eventSet, true);
-            return actions[actionRef].call(evaluationContext, n.getData, n.setData, n.events, $raise);
+            return action.call(evaluationContext, n.getData, n.setData, n.events, $raise);
         }
 
         function getStatesEntered(transitions) {
@@ -386,8 +375,8 @@ define([
                         }
                     });
 
-                    if (state.onexit !== undefined) {
-                        evaluateAction(state.onexit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                    if (state.onExit !== undefined) {
+                        evaluateAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
 
                     var f;
@@ -448,8 +437,8 @@ define([
                         }
                     });
 
-                    if (state.onentry !== undefined) {
-                        evaluateAction(state.onentry, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                    if (state.onEntry !== undefined) {
+                        evaluateAction(state.onEntry, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -610,9 +599,11 @@ define([
             return getConfiguration();
         }
 
-        configuration.push(model.root.initial || model.root);
+        builder.build(spec);
+        configuration.push(builder.getRoot().initial || builder.getRoot());
 
         return {
+            builder: builder,
             start: start,
             send: send,
             cancel: cancel,

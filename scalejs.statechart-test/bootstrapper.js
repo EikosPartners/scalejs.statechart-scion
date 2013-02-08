@@ -6,7 +6,7 @@ require({
         "jasmine":  "Scripts/jasmine",
         "jasmine-html":  "Scripts/jasmine-html",
         "linq":  "Scripts/linq",
-        "scalejs":  "Scripts/scalejs-0.2.0",
+        "scalejs":  "Scripts/scalejs-0.2.3",
         "scalejs.linq":  "Scripts/scalejs.linq-0.2.0",
         "scalejs.statechart":  "../scalejs.statechart/scalejs.statechart"
     },

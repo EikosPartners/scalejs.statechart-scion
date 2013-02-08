@@ -16,7 +16,10 @@ define([
         return htmlReporter.specFilter(spec);
     };
 
-    require(['./statechart.test'], function () {
+    require([
+        './builder.test',
+        './statechart.test'
+    ], function () {
         jasmineEnv.execute();
     });
 });

@@ -12,7 +12,6 @@ define([
 
     var // imports
         has = core.object.has,
-        enumerable = core.linq.enumerable,
         array = core.array;
 
     return function builder() {

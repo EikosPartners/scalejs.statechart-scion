@@ -681,7 +681,7 @@
         </value>
       </item>
     </BoolOptions2>
-    <ErrorOnUnused>false</ErrorOnUnused>
+    <ErrorOnUnused>true</ErrorOnUnused>
     <IndentSize>4</IndentSize>
     <MaxLength>160</MaxLength>
     <MaxComplexity xsi:nil="true" />

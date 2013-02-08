@@ -3,11 +3,13 @@ define([
     'scalejs!core',
     './model',
     './builder',
+    './runtime',
     './stateKinds'
 ], function (
     core,
     model,
     stateChartBuilder,
+    stateChartRuntime,
     stateKinds
 ) {
     'use strict';
@@ -17,28 +19,6 @@ define([
         array = core.array,
         enumerable = core.linq.enumerable;
 
-    function getTransitionWithHigherSourceChildPriority() {
-        return function (arg) {
-            var t1 = arg[0],
-                t2 = arg[1];
-
-            //compare transitions based first on depth, then based on document order
-            if (t1.source.depth < t2.source.depth) {
-                return t2;
-            }
-
-            if (t2.source.depth < t1.source.depth) {
-                return t1;
-            }
-
-            if (t1.documentOrder < t2.documentOrder) {
-                return t1;
-            }
-
-            return t2;
-        };
-    }
-
     function scxmlPrefixTransitionSelector(state, eventNames, evaluator) {
         return array.filter(state.transitions, function (t) {
             return !t.event || (eventNames.indexOf(t.event) > -1 && (!t.cond || evaluator(t)));
@@ -47,19 +27,14 @@ define([
 
 
     return function create(spec) {
-        var builder = stateChartBuilder(),
-            priorityComparisonFn = getTransitionWithHigherSourceChildPriority(model),
+        var builder,
+            runtime,
             configuration = [],
             historyValue,
             innerEventQueue = [],
             isInFinalState = false,
-            timeoutMap = {},
             listeners = [],
             printTrace = true,
-            actions = [],
-            datamodel = {},
-            isStepping = false,
-            evaluationContext,
             onlySelectFromBasicStates = false,
             logStatesEnteredAndExited = false;
 
@@ -102,7 +77,7 @@ define([
             while (inconsistentTransitionsPairs.length > 0) {
                 enabledTransitions = enumerable
                     .from(inconsistentTransitionsPairs)
-                    .select(priorityComparisonFn);
+                    .select(model.getTransitionWithHigherSourceChildPriority);
 
                 tuple = getInconsistentTransitions(enabledTransitions);
                 consistentTransitions = tuple[0];
@@ -117,36 +92,8 @@ define([
             return priorityEnabledTransitions;
         }
 
-        function getOrSetData(fnName, name, value) {
-            var data = datamodel[name];
-            if (!data) {
-                throw new Error("Variable " + name + " not declared in datamodel.");
-            }
-
-            return data[fnName](value);
-        }
-
-        function getData(name) {
-            return getOrSetData('get', name);
-        }
-
-        function setData(name, value) {
-            return getOrSetData('set', name, value);
-        }
-
-        function getScriptingInterface(datamodelForNextStep, eventSet, allowWrite) {
-            return {
-                setData: allowWrite  ? function (name, value) {
-                    datamodelForNextStep[name] = value;
-                } : function () {},
-                getData: getData,
-                events: eventSet
-            };
-        }
-
-        function selectTransitions(eventSet, datamodelForNextStep) {
+        function selectTransitions(eventSet) {
             var states,
-                n,
                 e,
                 eventNames,
                 usePrefixMatchingAlgorithm,
@@ -166,10 +113,11 @@ define([
                     });
             }
 
+            /*
             n = getScriptingInterface(datamodelForNextStep, eventSet);
             e = function (t) {
                 return actions[t.conditionActionRef].call(evaluationContext, n.getData, n.setData, n.events);
-            };
+            };*/
 
             eventNames = enumerable.from(eventSet).select('$.name');
 
@@ -216,15 +164,6 @@ define([
                 .toArray();
 
             return [basicStatesExited, sortedStatesExited];
-        }
-
-        function evaluateAction(action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
-            function $raise(event) {
-                array.addOne(eventsToAddToInnerQueue, event);
-            }
-
-            var n = getScriptingInterface(datamodelForNextStep, eventSet, true);
-            return action.call(evaluationContext, n.getData, n.setData, n.events, $raise);
         }
 
         function getStatesEntered(transitions) {
@@ -303,9 +242,6 @@ define([
 
             //sort based on depth
             sortedStatesEntered = enumerable.from(statesToEnter).orderBy('$.depth').toArray();
-/*            sortedStatesEntered = statesToEnter.iter().sort(function (s1, s2) {
-                return s1.depth - s2.depth;
-            }); */
 
             return [basicStatesToEnter, sortedStatesEntered];
         }
@@ -376,7 +312,8 @@ define([
                     });
 
                     if (state.onExit !== undefined) {
-                        evaluateAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.evaluateAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        //evaluateAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
 
                     var f;
@@ -418,7 +355,7 @@ define([
                     });
 
                     if (transition.actions !== undefined) {
-                        evaluateAction(transition.actions, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.evaluateAction(transition.actions, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -438,7 +375,7 @@ define([
                     });
 
                     if (state.onEntry !== undefined) {
-                        evaluateAction(state.onEntry, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.evaluateAction(state.onEntry, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -473,7 +410,7 @@ define([
                 //update the datamodel
                 for (key in datamodelForNextStep) {
                     if (datamodelForNextStep.hasOwnProperty(key)) {
-                        setData(key, datamodelForNextStep[key]);
+                        runtime.setData(key, datamodelForNextStep[key]);
                     }
                 }
             }
@@ -526,80 +463,35 @@ define([
             return configurationIds;
         }
 
-        function gen(evtObjOrName, optionalData) {
-            var e;
-
-            switch (typeof evtObjOrName) {
-            case 'string':
-                e = {name : evtObjOrName, data : optionalData};
-                break;
-            case 'object':
-                if (typeof evtObjOrName.name === 'string') {
-                    e = evtObjOrName;
-                } else {
-                    throw new Error('Event object must have "name" property of type string.');
-                }
-                break;
-            default:
-                throw new Error('First argument to gen must be a string or object.');
-            }
-
-            if (isStepping) {
-                throw new Error('gen called before previous call to gen could complete. ' +
-                                'If executed in single-threaded environment, this means it was called recursively,' +
-                                'which is illegal, as it would break SCION step semantics.');
-            }
-
-            isStepping = true;
-            performBigStep(e);
-            isStepping = false;
-            return getConfiguration();
-        }
-
-        function send(event, options) {
-            var callback, timeoutId;
-
-            if (setTimeout) {
-                if (printTrace) {
-                    log("sending event", event.name, "with content", event.data, "after delay", options.delay);
-                }
-                callback = function () {
-                    return gen(event);
-                };
-                timeoutId = setTimeout(callback, options.delay);
-                if (options.sendid) {
-                    timeoutMap[options.sendid] = timeoutId;
-                }
-            } else {
-                throw new Error("setTimeout function not set");
-            }
-        }
-
-        function cancel(sendid) {
-            if (clearTimeout) {
-                if (timeoutMap.hasOwnProperty(sendid)) {
-                    if (printTrace) {
-                        log("cancelling ", sendid, " with timeout id ", timeoutMap[sendid]);
-                    }
-                    return clearTimeout(timeoutMap[sendid]);
-                }
-            } else {
-                throw new Error("clearTimeout function not set");
-            }
-        }
-
         function start() {
             //perform big step without events to take all default transitions and reach stable initial state
             if (printTrace) {
                 log("performing initial big step");
             }
 
+            runtime = stateChartRuntime({
+                performBigStep: performBigStep,
+                getConfiguration: getConfiguration,
+                printTrace: printTrace
+            });
+
             performBigStep();
 
             return getConfiguration();
         }
 
+        function send(event, options) {
+            //_TODO: verify if runtime is active
+            runtime.send.apply(event, options);
+        }
+
+        function cancel(sendid) {
+            runtime.cancel(sendid);
+        }
+
+        builder = stateChartBuilder();
         builder.build(spec);
+
         configuration.push(builder.getRoot().initial || builder.getRoot());
 
         return {

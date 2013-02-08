@@ -2,8 +2,7 @@
 define([
     'scalejs!core'
 ], function (
-    core,
-    transition
+    core
 ) {
     'use strict';
 

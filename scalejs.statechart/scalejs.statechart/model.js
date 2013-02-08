@@ -9,13 +9,10 @@ define([
     'use strict';
 
     var // imports
-        has = core.object.has,
-        enumerable = core.linq.enumerable,
-        array = core.array;
+        enumerable = core.linq.enumerable;
 
     function getAncestors(state, root) {
-        var ancestors,
-            index;
+        var index;
 
         index = state.ancestors.indexOf(root);
         if (index > -1) {
@@ -26,10 +23,6 @@ define([
 
     function getAncestorsOrSelf(state, root) {
         return [state].concat(getAncestors(state, root));
-    }
-
-    function getDescendantsOrSelf(state) {
-        return [state].concat(state.descendants);
     }
 
     function isAncestrallyRelatedTo(s1, s2) {
@@ -63,12 +56,32 @@ define([
         return isOrthogonal;
     }
 
+    function getTransitionWithHigherSourceChildPriority(arg) {
+        var t1 = arg[0],
+            t2 = arg[1];
+
+        //compare transitions based first on depth, then based on document order
+        if (t1.source.depth < t2.source.depth) {
+            return t2;
+        }
+
+        if (t2.source.depth < t1.source.depth) {
+            return t1;
+        }
+
+        if (t1.documentOrder < t2.documentOrder) {
+            return t1;
+        }
+
+        return t2;
+    }
 
     return {
         getLCA: getLCA,
         getAncestors: getAncestors,
         getAncestorsOrSelf: getAncestorsOrSelf,
-        isArenaOrthogonal: isArenaOrthogonal
+        isArenaOrthogonal: isArenaOrthogonal,
+        getTransitionWithHigherSourceChildPriority: getTransitionWithHigherSourceChildPriority
     };
 });
 

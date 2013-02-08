@@ -30,8 +30,7 @@ define([
         }
 
         function id() {
-            var stateId,
-                latestId;
+            var stateId;
 
             if (has(spec, 'id')) {
                 if (context.idToStateMap.hasOwnProperty(spec.id)) {

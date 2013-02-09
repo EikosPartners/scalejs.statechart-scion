@@ -17,6 +17,7 @@ define([
     };
 
     require([
+        './scalejs.statechart.test',
         './builder.test',
         './statechart.test'
     ], function () {

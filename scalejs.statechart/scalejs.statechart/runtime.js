@@ -119,8 +119,18 @@ define([
             }
         }
 
+        function transitionConditionEvaluator(eventSet) {
+            return function (transition) {
+                if (transition.condition) {
+                    var n = getScriptingInterface(null,/*datamodelForNextStep*/ eventSet, true);
+                    return transition.condition.call(null, n.getData, n.setData, n.events);
+                }
+            };
+        }
+
         return {
             evaluateAction: evaluateAction,
+            transitionConditionEvaluator: transitionConditionEvaluator,
             getData: getData,
             setData: setData,
             send: send,

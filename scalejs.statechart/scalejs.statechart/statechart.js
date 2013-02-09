@@ -4,13 +4,15 @@ define([
     './model',
     './builder',
     './runtime',
-    './stateKinds'
+    './stateKinds',
+    './transitionSelector'
 ], function (
     core,
     model,
     stateChartBuilder,
     stateChartRuntime,
-    stateKinds
+    stateKinds,
+    stateChartTransitionSelector
 ) {
     'use strict';
 
@@ -19,16 +21,10 @@ define([
         array = core.array,
         enumerable = core.linq.enumerable;
 
-    function scxmlPrefixTransitionSelector(state, eventNames, evaluator) {
-        return array.filter(state.transitions, function (t) {
-            return !t.event || (eventNames.indexOf(t.event) > -1 && (!t.cond || evaluator(t)));
-        });
-    }
-
-
     return function create(spec) {
         var builder,
             runtime,
+            transitionSelector,
             configuration = [],
             historyValue,
             innerEventQueue = [],
@@ -94,13 +90,10 @@ define([
 
         function selectTransitions(eventSet) {
             var states,
-                e,
                 eventNames,
-                usePrefixMatchingAlgorithm,
-                transitionSelector,
                 enabledTransitions,
+                transitionConditionEvaluator,
                 priorityEnabledTransitions;
-
 
             if (onlySelectFromBasicStates) {
                 states = enumerable.from(configuration);
@@ -108,8 +101,6 @@ define([
                 states = enumerable.from(configuration)
                     .selectMany(function (s) {
                         return model.getAncestorsOrSelf(s);
-                        //var ancestors = model.getAncestors(basicState);
-                        //return enumerable.returnValue(basicState).concat(ancestors);
                     });
             }
 
@@ -118,19 +109,11 @@ define([
             e = function (t) {
                 return actions[t.conditionActionRef].call(evaluationContext, n.getData, n.setData, n.events);
             };*/
-
+            transitionConditionEvaluator = runtime.transitionConditionEvaluator(eventSet);
             eventNames = enumerable.from(eventSet).select('$.name');
 
-            usePrefixMatchingAlgorithm = eventNames
-                .any(function (name) {
-                    return name.search(".");
-                });
-
-            //transitionSelector = usePrefixMatchingAlgorithm ? scxmlPrefixTransitionSelector : opts.transitionSelector;
-            transitionSelector = scxmlPrefixTransitionSelector;
-
             enabledTransitions = states.selectMany(function (state) {
-                return transitionSelector(state, eventNames, e);
+                return transitionSelector(state, eventNames, transitionConditionEvaluator);
             });
 
             priorityEnabledTransitions = selectPriorityEnabledTransitions(enabledTransitions);
@@ -354,8 +337,8 @@ define([
                         }
                     });
 
-                    if (transition.actions !== undefined) {
-                        runtime.evaluateAction(transition.actions, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                    if (transition.action) {
+                        runtime.evaluateAction(transition.action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -493,6 +476,8 @@ define([
         builder.build(spec);
 
         configuration.push(builder.getRoot().initial || builder.getRoot());
+
+        transitionSelector = stateChartTransitionSelector();
 
         return {
             builder: builder,

@@ -16,17 +16,20 @@ define([
         array = core.array;
 
     return function state(spec, ancestors, context) {
-        var self = {},
-            uniqueIds = {};
+        var self = {};
 
         function genId(group) {
-            var latestId = uniqueIds[group] || 0,
+            var latestId = context.uniqueIds[group] || 0,
                 nextId = latestId + 1,
                 id = group + '_' + nextId;
 
-            uniqueIds[group] = nextId;
+            context.uniqueIds[group] = nextId;
 
             return id;
+        }
+
+        function parent() {
+            return ancestors.length > 0 ? ancestors[ancestors.length - 1] : undefined;
         }
 
         function id() {
@@ -50,6 +53,7 @@ define([
         }
 
         function kind() {
+            var parentState;
             if (has(spec, 'states')) {
                 return stateKinds.COMPOSITE;
             }
@@ -66,6 +70,16 @@ define([
             // or a string indicating an id of the child state that should be initial
             // Therefore state is initial only if the flag is boolean and is true
             if (spec.initial === true) {
+                parentState = context.idToStateMap[parent()];
+                // set this state as parent's initial
+                if (has(parentState, 'initial')) {
+                    throw new Error('Duplicate initial states in state "' + self.id + '".');
+                }
+
+                if (parentState) {
+                    parentState.initial = self.id;
+                }
+
                 return stateKinds.INITIAL;
             }
             if (spec.final) {
@@ -88,10 +102,6 @@ define([
                 }).toArray();
 
             return transitionIds;
-        }
-
-        function parent() {
-            return ancestors.length > 0 ? ancestors[ancestors.length - 1] : undefined;
         }
 
         function documentOrder() {
@@ -129,17 +139,22 @@ define([
 
         function initial() {
             var generatedInitial,
-                generatedInitialId,
+                generatedInitialId;/*,
                 initials = array.filter(self.children, function (s) {
                     return s.kind === stateKinds.INITIAL;
                 });
-
+            
             if (initials.length > 1) {
                 throw new Error('Duplicate initial states in state "' + self.id + '".');
             }
 
             if (initials.length === 1) {
                 return initials[0].id;
+            }*/
+
+            // if initial is already set by one of the children simply return it
+            if (self.initial) {
+                return self.initial;
             }
 
             // parallel states and states with no children don't have initial.

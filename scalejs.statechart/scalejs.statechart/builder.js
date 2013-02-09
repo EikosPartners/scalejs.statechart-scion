@@ -61,7 +61,8 @@ define([
                 uniqueEvents: {},
                 transitions: [],
                 idToStateMap: {},
-                onFoundStateIdCallbacks: []
+                onFoundStateIdCallbacks: [],
+                uniqueIds: {}
             };
 
             root = state(spec, [], context);

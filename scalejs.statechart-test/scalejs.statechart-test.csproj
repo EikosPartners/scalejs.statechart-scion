@@ -27,6 +27,7 @@
     <Content Include="Scripts\scalejs.statechart-0.2.0.min.js" />
     <Content Include="tests\all.tests.js" />
     <Content Include="tests\builder.test.js" />
+    <Content Include="tests\scalejs.statechart.test.js" />
     <Content Include="tests\statechart.test.js" />
   </ItemGroup>
   <ItemGroup>

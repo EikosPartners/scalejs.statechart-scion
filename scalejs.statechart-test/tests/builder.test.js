@@ -4,7 +4,7 @@
 define([
     'scalejs!core',
     'scalejs!application'
-], function (core, model, builder) {
+], function (core) {
     var statechart = core.statechart,
         enumerable = core.linq.enumerable;
 
@@ -17,7 +17,23 @@ define([
                 transitions = sc.builder.getTransitions();
 
             expect(states.length).toBe(1);
-            expect(states[0].id).toBe('root');
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['root']);
+            expect(transitions).toEqual([]);
+        });
+
+        it('states with no id-s', function () {
+            var sc = statechart({
+                    states: [{
+                        states: [{
+                        }]
+                    }, {
+                    }]
+                }),
+                states = sc.builder.getStates();
+
+            expect(states.length).toBe(6);
+            expect(enumerable.from(states).orderBy('$.depth').select('$.id').toArray())
+                .toEqual(['state_1', 'state_2', 'state_4', 'initial_2', 'state_3', 'initial_1']);
         });
 
         it('no initial state is specified', function () {
@@ -60,7 +76,6 @@ define([
         });
 
         it('initial state is specified as a flag on child state', function () {
-            return;
             var sc = statechart({
                     id: 'root',
                     states: [{
@@ -72,12 +87,9 @@ define([
                 }),
                 states = sc.builder.getStates(),
                 transitions = sc.builder.getTransitions();
-            expect(states.length).toBe(4);
-            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'initial_1', 'root']);
-            expect(transitions.length).toBe(1);
-            expect(enumerable.from(transitions).select('$.source.id').toArray()).toEqual(['initial_1']);
-            expect(enumerable.from(transitions).select('$.targets.length').toArray()).toEqual([1]);
-            expect(enumerable.from(transitions).select('$.targets[0].id').toArray()).toEqual(['s2']);
+            expect(states.length).toBe(3);
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'root']);
+            expect(transitions).toEqual([]);
         });
     });
 });

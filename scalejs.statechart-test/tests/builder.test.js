@@ -131,5 +131,25 @@ define([
             expect(transitions.length).toEqual(1);
             expect(transitions[0].events).toEqual(['*']);
         });
+
+        it('parallel state', function () {
+            var sc = statechart({
+                    initial: 'p',
+                    states: [{
+                        id: 'p', 
+                        parallel: true,
+                        states: [{
+                            id: 'a'
+                            //initial: true
+                        }, {
+                            id: 'b'
+                        }]
+                    }]
+                }),
+                states = sc.builder.getStates();
+            expect(states.length).toBe(5);
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['a', 'b', 'p', 'initial_1', 'root']);
+            expect(states[2].kind).toBe(2);
+        });
     });
 });

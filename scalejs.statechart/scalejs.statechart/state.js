@@ -58,12 +58,12 @@ define([
 
         function kind() {
             var parentState;
-            if (has(spec, 'states')) {
-                return stateKinds.COMPOSITE;
-            }
-
             if (spec.parallel) {
                 return stateKinds.PARALLEL;
+            }
+
+            if (has(spec, 'states')) {
+                return stateKinds.COMPOSITE;
             }
 
             if (spec.history) {

@@ -429,7 +429,10 @@ define([
         }
 
         function getConfiguration() {
-            var configurationIds = enumerable.from(configuration).select('$.id').toArray();
+            var configurationIds = enumerable.from(configuration)
+                .orderBy('$.documentOrder')
+                .select('$.id')
+                .toArray();
 
             return configurationIds;
         }
@@ -441,6 +444,7 @@ define([
                     return model.getAncestorsOrSelf(s);
                 })
                 .select('$.id')
+                .orderBy('$.documentOrder')
                 .distinct()
                 .toArray();
 

@@ -19,6 +19,10 @@ define([
         var self = {};
 
         function genId(group) {
+            if (ancestors.length === 0) {
+                return 'root';
+            }
+
             var latestId = context.uniqueIds[group] || 0,
                 nextId = latestId + 1,
                 id = group + '_' + nextId;

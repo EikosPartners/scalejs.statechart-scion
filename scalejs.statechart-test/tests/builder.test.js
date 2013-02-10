@@ -33,7 +33,7 @@ define([
 
             expect(states.length).toBe(6);
             expect(enumerable.from(states).orderBy('$.depth').select('$.id').toArray())
-                .toEqual(['state_1', 'state_2', 'state_4', 'initial_2', 'state_3', 'initial_1']);
+                .toEqual(['root', 'state_1', 'state_3', 'initial_2', 'state_2', 'initial_1']);
         });
 
         it('no initial state is specified', function () {
@@ -90,6 +90,46 @@ define([
             expect(states.length).toBe(3);
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'root']);
             expect(transitions).toEqual([]);
+        });
+
+        it('transition with a `test.*` pattern', function () {
+            var sc = statechart({
+                    states: [{
+                        transitions: [{
+                            event: 'test.*',
+                            target: 's2'
+                        }]
+                    }, {
+                        id: 's2',
+                        initial: true
+                    }]
+                }),
+                states = sc.builder.getStates(),
+                transitions = sc.builder.getTransitions();
+            expect(states.length).toBe(3);
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'root']);
+            expect(transitions.length).toEqual(1);
+            expect(transitions[0].events).toEqual(['test']);
+        });
+
+        it('transition with a `*` pattern', function () {
+            var sc = statechart({
+                    states: [{
+                        transitions: [{
+                            event: '*',
+                            target: 's2'
+                        }]
+                    }, {
+                        id: 's2',
+                        initial: true
+                    }]
+                }),
+                states = sc.builder.getStates(),
+                transitions = sc.builder.getTransitions();
+            expect(states.length).toBe(3);
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'root']);
+            expect(transitions.length).toEqual(1);
+            expect(transitions[0].events).toEqual(['*']);
         });
     });
 });

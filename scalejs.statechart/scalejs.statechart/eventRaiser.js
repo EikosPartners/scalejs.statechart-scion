@@ -43,15 +43,12 @@ define([
                 return;
             }
 
-            if (is(dataOrDelay, 'object')) {
+            if (!has(dataOrDelay) || is(dataOrDelay, 'object')) {
                 doRaise(eventName, dataOrDelay, delay, raiser);
                 return;
             }
 
-            throw {
-                name: 'Illegal Argument',
-                message: '`dataOrDelay` must be either a number indicating the delay or an event data object.'
-            };
+            throw new Error('`dataOrDelay` must be either a number indicating the delay or an event data object.');
         }
 
         return function (eventName, dataOrDelay, delay) {

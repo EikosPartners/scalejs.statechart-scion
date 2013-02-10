@@ -33,7 +33,6 @@ define([
             isInFinalState = false,
             listeners = [],
             printTrace = true,
-            onlySelectFromBasicStates = false,
             logStatesEnteredAndExited = false,
             isStepping = false;
 
@@ -63,20 +62,23 @@ define([
                 }
             }
 
-            consistentTransitions = transitions.except(allInconsistentTransitions);
+            consistentTransitions = enumerable.from(transitions).except(allInconsistentTransitions).toArray();
             return [consistentTransitions, inconsistentTransitionsPairs];
         }
 
         function selectPriorityEnabledTransitions(enabledTransitions) {
-            var priorityEnabledTransitions = enabledTransitions.toArray(),
+            var priorityEnabledTransitions = [],
                 tuple = getInconsistentTransitions(enabledTransitions),
                 consistentTransitions = tuple[0],
                 inconsistentTransitionsPairs = tuple[1];
 
+            priorityEnabledTransitions = array.copy(consistentTransitions);
+
             while (inconsistentTransitionsPairs.length > 0) {
                 enabledTransitions = enumerable
                     .from(inconsistentTransitionsPairs)
-                    .select(model.getTransitionWithHigherSourceChildPriority);
+                    .select(model.getTransitionWithHigherSourceChildPriority)
+                    .toArray();
 
                 tuple = getInconsistentTransitions(enabledTransitions);
                 consistentTransitions = tuple[0];
@@ -98,26 +100,20 @@ define([
                 transitionConditionEvaluator,
                 priorityEnabledTransitions;
 
-            if (onlySelectFromBasicStates) {
-                states = enumerable.from(configuration);
-            } else {
-                states = enumerable.from(configuration)
-                    .selectMany(function (s) {
-                        return model.getAncestorsOrSelf(s);
-                    });
-            }
+            states = enumerable.from(configuration)
+                .selectMany(function (s) {
+                    return model.getAncestorsOrSelf(s);
+                })
+                .distinct()
+                .toArray();
 
-            /*
-            n = getScriptingInterface(datamodelForNextStep, eventSet);
-            e = function (t) {
-                return actions[t.conditionActionRef].call(evaluationContext, n.getData, n.setData, n.events);
-            };*/
             transitionConditionEvaluator = runtime.transitionConditionEvaluator(eventSet, datamodelForNextStep);
-            eventNames = enumerable.from(eventSet).select('$.name');
+            eventNames = enumerable.from(eventSet).select('$.name').toArray();
 
-            enabledTransitions = states.selectMany(function (state) {
-                return transitionSelector(state, eventNames, transitionConditionEvaluator);
-            });
+            enabledTransitions = enumerable.from(states)
+                .selectMany(function (state) {
+                    return transitionSelector(state, eventNames, transitionConditionEvaluator);
+                }).toArray();
 
             priorityEnabledTransitions = selectPriorityEnabledTransitions(enabledTransitions);
 

@@ -1,4 +1,4 @@
-/*global define,describe,expect,it*/
+/*global define,describe,expect,it,jasmine*/
 /*jslint sloppy: true*/
 /// <reference path="../Scripts/jasmine.js"/>
 define([
@@ -101,7 +101,6 @@ define([
 
         it('doesn\'t transit to next state if condition evaluates to false', function () {
             var sc = statechart({
-                    id: 'root',
                     states: [{
                         id: 's1',
                         transitions: [{
@@ -121,16 +120,14 @@ define([
         });
 
         it('executes transition action', function () {
-            var byTransition = false,
+            var action = jasmine.createSpy(),
                 sc = statechart({
                     id: 'root',
                     states: [{
                         id: 's1',
                         transitions: [{
                             target: 's2',
-                            action: function () {
-                                byTransition = true;
-                            }
+                            action: action
                         }]
                     }, {
                         id: 's2'
@@ -140,8 +137,127 @@ define([
 
             expect(sc.getConfiguration()).toEqual(['s2']);
             expect(sc.getFullConfiguration()).toEqual(['s2', 'root']);
-            expect(byTransition).toBeTruthy();
+            expect(action).toHaveBeenCalledWith([]);
         });
 
+        it('transits to proper state when an event is fired', function () {
+            var sc = statechart({
+                states: [{
+                    id: 's1',
+                    transitions: [{
+                        event: 'test.transit',
+                        target: 's2'
+                    }]
+                }, {
+                    id: 's2'
+                }]
+            });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            sc.raise('test.transit');
+            expect(sc.getConfiguration()).toEqual(['s2']);
+        });
+
+        it('transits to proper state when an event is fired that matches a `test.*` pattern', function () {
+            var sc = statechart({
+                states: [{
+                    id: 's1',
+                    transitions: [{
+                        event: 'test.*',
+                        target: 's2'
+                    }]
+                }, {
+                    id: 's2'
+                }]
+            });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            sc.raise('test.transit');
+            expect(sc.getConfiguration()).toEqual(['s2']);
+        });
+
+        it('transits to proper state when an event is fired and transition event is `*`', function () {
+            var sc = statechart({
+                states: [{
+                    id: 's1',
+                    transitions: [{
+                        event: '*',
+                        target: 's2'
+                    }]
+                }, {
+                    id: 's2'
+                }]
+            });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            sc.raise('test.transit');
+            expect(sc.getConfiguration()).toEqual(['s2']);
+        });
+
+        it('doesn\'t transit when an event is fired but condition is false', function () {
+            var sc = statechart({
+                states: [{
+                    id: 's1',
+                    transitions: [{
+                        event: 'test.transit',
+                        target: 's2',
+                        condition: function () {
+                            return false;
+                        }
+                    }]
+                }, {
+                    id: 's2'
+                }]
+            });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            sc.raise('test.transit');
+            expect(sc.getConfiguration()).toEqual(['s1']);
+        });
+
+        it('doesn\'t transit when an event is fired that doesn\'t match transition event', function () {
+            var sc = statechart({
+                states: [{
+                    id: 's1',
+                    transitions: [{
+                        event: 'test.transit',
+                        target: 's2'
+                    }]
+                }, {
+                    id: 's2'
+                }]
+            });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            sc.raise('test.not.transit');
+            expect(sc.getConfiguration()).toEqual(['s1']);
+        });
+
+        it('transition condition function isn\'t called when event doesn\'t match', function () {
+            var condition = jasmine.createSpy(),
+                sc = statechart({
+                    states: [{
+                        id: 's1',
+                        transitions: [{
+                            event: 'test.transit',
+                            target: 's2',
+                            condition: condition
+                        }]
+                    }, {
+                        id: 's2'
+                    }]
+                });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            sc.raise('test.not.transit');
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            expect(condition).not.toHaveBeenCalled();
+        });
     });
 });

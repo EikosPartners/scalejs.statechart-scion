@@ -12,7 +12,7 @@ define([
         var eventNameReCache = {};
 
         function eventNameToRe(name) {
-            return new RegExp("^" + (name.replace(/\./g, "\\.")) + "(\\.[0-9a-zA-Z]+)*$");
+            return new RegExp('^' + name.replace(/\./g, '\\.') + '(\\.[0-9a-zA-Z]+)*$');
         }
 
         function retrieveEventRe(name) {
@@ -32,7 +32,9 @@ define([
                             return retrieveEventRe(tEvent).test(name);
                         });
                     };
-            return eventNames.filter(f).length;
+            return enumerable
+                .from(eventNames)
+                .any(f);
         }
 
         return function (state, eventNames, evaluator) {

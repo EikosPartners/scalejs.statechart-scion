@@ -19,7 +19,8 @@ define([
     require([
         './scalejs.statechart.test',
         './builder.test',
-        './statechart.test'
+        './statechart.test',
+        './statechart.functional.test'
     ], function () {
         jasmineEnv.execute();
     });

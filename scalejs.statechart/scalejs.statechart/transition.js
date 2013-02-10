@@ -28,13 +28,13 @@ define([
                 .select(function (event) {
                     // strip .* form the end
                     if (event.indexOf('.*', event.length - 2) >= 0) {
-                        return event.indexOf(0, event.length - 2);
+                        return event.substring(0, event.length - 2);
                     }
 
                     return event;
                 })
-                .filter('$ !== "*"')
-                .forEach(function (event) {
+                .where('$ !== "*"')
+                .doAction(function (event) {
                     context.uniqueEvents[event] = true;
                 })
                 .toArray();

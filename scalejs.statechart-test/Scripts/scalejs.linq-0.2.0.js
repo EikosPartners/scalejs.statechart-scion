@@ -275,7 +275,7 @@ define('scalejs.linq/enumerable',[ 'linq' ], function (Enumerable) {
         };
 
         e.doAction = function (action) {
-            return enumerable(Enumerable.prototype.doAction.apply(linqEnumerable, arguments));
+            return enumerable(Enumerable.prototype.Do.apply(linqEnumerable, arguments));
         };
 
         e.forEach = function (action) {

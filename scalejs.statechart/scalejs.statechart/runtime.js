@@ -1,140 +1,75 @@
 ﻿/*global define,setTimeout,clearTimeout*/
 define([
-    'scalejs!core'
+    'scalejs!core',
+    './eventRaiser'
 ], function (
-    core
+    core,
+    eventRaiser
 ) {
     'use strict';
 
     var // imports
+        has = core.object.has,
         array = core.array,
         log = core.log.debug;
 
-    return function runtime(context) {
-        var performBigStep = context.performBigStep,
-            getConfiguration = context.getConfiguration,
-            printTrace = context.printTrace,
-            isStepping = false,
-            timeoutMap = {},
-            datamodel = {};
+    return function runtime() {
+        var datamodel = {};
 
-        function getOrSetData(fnName, name, value) {
-            var data = datamodel[name];
-            if (!data) {
-                throw new Error("Variable " + name + " not declared in datamodel.");
+        function createActionContext(datamodelForNextStep, eventsToAddToInnerQueue) {
+            function get(key) {
+                return datamodelForNextStep.hasOwnProperty(key)
+                        ? datamodelForNextStep[key]
+                        : datamodel[key];
             }
 
-            return data[fnName](value);
-        }
+            function set(key, value) {
+                datamodelForNextStep[key] = value;
+            }
 
-        function getData(name) {
-            return getOrSetData('get', name);
-        }
-
-        function setData(name, value) {
-            return getOrSetData('set', name, value);
-        }
-
-
-        function getScriptingInterface(datamodelForNextStep, eventSet, allowWrite) {
-            return {
-                setData: allowWrite  ? function (name, value) {
-                    datamodelForNextStep[name] = value;
-                } : function () {},
-                getData: getData,
-                events: eventSet
-            };
-        }
-
-        function evaluateAction(action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
-            function $raise(event) {
+            function raiseEvent(event) {
+                // if eventsToAddToInnerQueue is not defined it means raiseEvent is called
+                // from transitionEvaluator. This is now allowed. 
+                if (!has(eventsToAddToInnerQueue)) {
+                    throw {
+                        name: 'Illegal Operation',
+                        message: 'Raising events is not allowed in transition conditions.'
+                    };
+                }
                 array.addOne(eventsToAddToInnerQueue, event);
             }
 
-            var n = getScriptingInterface(datamodelForNextStep, eventSet, true);
-            return action.call(null, n.getData, n.setData, n.events, $raise);
+            return {
+                get: get,
+                set: set,
+                raise: eventRaiser(raiseEvent)
+            };
         }
 
-        function gen(evtObjOrName, optionalData) {
-            var e;
+        function runAction(action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
+            log('Running action ' + action.name);
 
-            switch (typeof evtObjOrName) {
-            case 'string':
-                e = {name : evtObjOrName, data : optionalData};
-                break;
-            case 'object':
-                if (typeof evtObjOrName.name === 'string') {
-                    e = evtObjOrName;
-                } else {
-                    throw new Error('Event object must have "name" property of type string.');
-                }
-                break;
-            default:
-                throw new Error('First argument to gen must be a string or object.');
-            }
+            var actionContext = createActionContext(datamodelForNextStep, eventsToAddToInnerQueue),
+                result = action.call(actionContext, eventSet);
 
-            if (isStepping) {
-                throw new Error('gen called before previous call to gen could complete. ' +
-                                'If executed in single-threaded environment, this means it was called recursively,' +
-                                'which is illegal, as it would break SCION step semantics.');
-            }
+            log('Finished action ' + action.name);
 
-            isStepping = true;
-            performBigStep(e);
-            isStepping = false;
-
-            return getConfiguration();
+            return result;
         }
 
-        function send(event, options) {
-            var callback,
-                timeoutId;
+        function transitionConditionEvaluator(eventSet, datamodelForNextStep) {
+            var actionContext = createActionContext(datamodelForNextStep);
 
-            if (setTimeout) {
-                if (printTrace) {
-                    log("sending event", event.name, "with content", event.data, "after delay", options.delay);
-                }
-                callback = function () {
-                    return gen(event);
-                };
-                timeoutId = setTimeout(callback, options.delay);
-                if (options.sendid) {
-                    timeoutMap[options.sendid] = timeoutId;
-                }
-            } else {
-                throw new Error("setTimeout function not set");
-            }
-        }
-
-        function cancel(sendid) {
-            if (clearTimeout) {
-                if (timeoutMap.hasOwnProperty(sendid)) {
-                    if (printTrace) {
-                        log("cancelling ", sendid, " with timeout id ", timeoutMap[sendid]);
-                    }
-                    return clearTimeout(timeoutMap[sendid]);
-                }
-            } else {
-                throw new Error("clearTimeout function not set");
-            }
-        }
-
-        function transitionConditionEvaluator(eventSet) {
             return function (transition) {
                 if (transition.condition) {
-                    var n = getScriptingInterface(null,/*datamodelForNextStep*/ eventSet, true);
-                    return transition.condition.call(null, n.getData, n.setData, n.events);
+                    return transition.condition.call(actionContext, eventSet);
                 }
             };
         }
 
         return {
-            evaluateAction: evaluateAction,
-            transitionConditionEvaluator: transitionConditionEvaluator,
-            getData: getData,
-            setData: setData,
-            send: send,
-            cancel: cancel
+            runAction: runAction,
+            transitionConditionEvaluator: transitionConditionEvaluator
         };
     };
 });

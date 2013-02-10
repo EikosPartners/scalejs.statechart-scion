@@ -38,24 +38,6 @@ define([
             expect(inS1).toBeTruthy();
         });
 
-        it('transitions to next state by eventless transition', function () {
-            var sc = statechart({
-                    id: 'root',
-                    states: [{
-                        id: 's1',
-                        transitions: [{
-                            target: 's2'
-                        }]
-                    }, {
-                        id: 's2'
-                    }]
-                });
-            sc.start();
-
-            expect(sc.getConfiguration()).toEqual(['s2']);
-            expect(sc.getFullConfiguration()).toEqual(['s2', 'root']);
-        });
-
         it('executes onExit', function () {
             var outS1 = false,
                 sc = statechart({
@@ -76,6 +58,66 @@ define([
 
             expect(sc.getFullConfiguration()).toEqual(['s2', 'root']);
             expect(outS1).toBeTruthy();
+        });
+
+        it('transits to next state by eventless transition', function () {
+            var sc = statechart({
+                    id: 'root',
+                    states: [{
+                        id: 's1',
+                        transitions: [{
+                            target: 's2'
+                        }]
+                    }, {
+                        id: 's2'
+                    }]
+                });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s2']);
+            expect(sc.getFullConfiguration()).toEqual(['s2', 'root']);
+        });
+
+        it('transits to next state if condition evaluates to true', function () {
+            var sc = statechart({
+                    id: 'root',
+                    states: [{
+                        id: 's1',
+                        transitions: [{
+                            target: 's2',
+                            condition: function () {
+                                return true;
+                            }
+                        }]
+                    }, {
+                        id: 's2'
+                    }]
+                });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s2']);
+            expect(sc.getFullConfiguration()).toEqual(['s2', 'root']);
+        });
+
+        it('doesn\'t transit to next state if condition evaluates to false', function () {
+            var sc = statechart({
+                    id: 'root',
+                    states: [{
+                        id: 's1',
+                        transitions: [{
+                            target: 's2',
+                            condition: function () {
+                                return false;
+                            }
+                        }]
+                    }, {
+                        id: 's2'
+                    }]
+                });
+            sc.start();
+
+            expect(sc.getConfiguration()).toEqual(['s1']);
+            expect(sc.getFullConfiguration()).toEqual(['s1', 'root']);
         });
 
         it('executes transition action', function () {

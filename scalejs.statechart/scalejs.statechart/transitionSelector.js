@@ -37,7 +37,7 @@ define([
 
         return function (state, eventNames, evaluator) {
             return state.transitions.filter(function (t) {
-                return (!t.events || nameMatch(t, eventNames)) && (!t.cond || evaluator(t));
+                return (!t.events || nameMatch(t, eventNames)) && (!t.condition || evaluator(t));
             });
         };
     };

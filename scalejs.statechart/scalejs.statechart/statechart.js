@@ -5,14 +5,16 @@ define([
     './builder',
     './runtime',
     './stateKinds',
-    './transitionSelector'
+    './transitionSelector',
+    './eventRaiser'
 ], function (
     core,
     model,
     stateChartBuilder,
     stateChartRuntime,
     stateKinds,
-    stateChartTransitionSelector
+    stateChartTransitionSelector,
+    eventRaiser
 ) {
     'use strict';
 
@@ -32,7 +34,8 @@ define([
             listeners = [],
             printTrace = true,
             onlySelectFromBasicStates = false,
-            logStatesEnteredAndExited = false;
+            logStatesEnteredAndExited = false,
+            isStepping = false;
 
         function conflicts(t1, t2) {
             return !model.isArenaOrthogonal(t1, t2);
@@ -88,7 +91,7 @@ define([
             return priorityEnabledTransitions;
         }
 
-        function selectTransitions(eventSet) {
+        function selectTransitions(eventSet, datamodelForNextStep) {
             var states,
                 eventNames,
                 enabledTransitions,
@@ -109,7 +112,7 @@ define([
             e = function (t) {
                 return actions[t.conditionActionRef].call(evaluationContext, n.getData, n.setData, n.events);
             };*/
-            transitionConditionEvaluator = runtime.transitionConditionEvaluator(eventSet);
+            transitionConditionEvaluator = runtime.transitionConditionEvaluator(eventSet, datamodelForNextStep);
             eventNames = enumerable.from(eventSet).select('$.name');
 
             enabledTransitions = states.selectMany(function (state) {
@@ -295,8 +298,7 @@ define([
                     });
 
                     if (state.onExit !== undefined) {
-                        runtime.evaluateAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
-                        //evaluateAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.runAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
 
                     var f;
@@ -338,7 +340,7 @@ define([
                     });
 
                     if (transition.action) {
-                        runtime.evaluateAction(transition.action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.runAction(transition.action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -357,8 +359,8 @@ define([
                         }
                     });
 
-                    if (state.onEntry !== undefined) {
-                        runtime.evaluateAction(state.onEntry, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                    if (state.onEntry) {
+                        runtime.runAction(state.onEntry, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -446,44 +448,42 @@ define([
             return configurationIds;
         }
 
+        function raiseEvent(event) {
+            if (isStepping) {
+                throw new Error('`raiseEvent` called before previous call to `raiseEvent` could complete. ' +
+                                'If executed in single-threaded environment, this means it was called recursively,' +
+                                'which is illegal, as it would break SCION step semantics.');
+            }
+
+            isStepping = true;
+            performBigStep(event);
+            isStepping = false;
+        }
+
         function start() {
             //perform big step without events to take all default transitions and reach stable initial state
             if (printTrace) {
                 log("performing initial big step");
             }
 
-            runtime = stateChartRuntime({
-                performBigStep: performBigStep,
-                getConfiguration: getConfiguration,
-                printTrace: printTrace
-            });
-
             performBigStep();
 
             return getConfiguration();
         }
 
-        function send(event, options) {
-            //_TODO: verify if runtime is active
-            runtime.send.apply(event, options);
-        }
-
-        function cancel(sendid) {
-            runtime.cancel(sendid);
-        }
+        // initialize all parts
+        transitionSelector = stateChartTransitionSelector();
 
         builder = stateChartBuilder();
         builder.build(spec);
 
         configuration.push(builder.getRoot().initial || builder.getRoot());
-
-        transitionSelector = stateChartTransitionSelector();
+        runtime = stateChartRuntime();
 
         return {
             builder: builder,
             start: start,
-            send: send,
-            cancel: cancel,
+            raise: eventRaiser(raiseEvent),
             getConfiguration: getConfiguration,
             getFullConfiguration: getFullConfiguration
         };

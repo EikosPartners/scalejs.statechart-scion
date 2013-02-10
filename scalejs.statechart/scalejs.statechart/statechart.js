@@ -78,6 +78,7 @@ define([
                 enabledTransitions = enumerable
                     .from(inconsistentTransitionsPairs)
                     .select(model.getTransitionWithHigherSourceChildPriority)
+                    .distinct()
                     .toArray();
 
                 tuple = getInconsistentTransitions(enabledTransitions);
@@ -113,7 +114,9 @@ define([
             enabledTransitions = enumerable.from(states)
                 .selectMany(function (state) {
                     return transitionSelector(state, eventNames, transitionConditionEvaluator);
-                }).toArray();
+                })
+                .distinct()
+                .toArray();
 
             priorityEnabledTransitions = selectPriorityEnabledTransitions(enabledTransitions);
 

@@ -5,7 +5,7 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart;
+    var statechart = core.statechart.statechart;
 
     describe('statechart `set` next small step', function () {
         it('0', function () {
@@ -84,24 +84,6 @@ define([
         });
 
         it('2', function () {
-            /*
-            {
-                states: [{
-                    id: 'a',
-                    transitions: [{
-                        event: 't',
-                        action: function () {
-                            return 'b';
-                        }
-                    }, {
-                        action: function () {
-                            return 'c';
-                        }
-                    }]
-                }]
-            }
-
-            */
             /*statechart({
                 state('a')
                 .on(function (data, event) { return data.i < 100; })
@@ -109,7 +91,7 @@ define([
                 state('A', 
                     state('b') 
                     .on(function (data) { return data.i < 100; })
-                    .goto('c', function (data) { data.i = data.i += 1; }),
+                    .transit('c', function (data) { data.i = data.i += 1; }),
 
                     state('c')
                     .on(function (data) { return data.i < 100; })

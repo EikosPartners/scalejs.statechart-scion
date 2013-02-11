@@ -2,7 +2,7 @@
 define([
     'scalejs!core',
     './model',
-    './builder',
+    './factory',
     './runtime',
     './stateKinds',
     './transitionSelector',
@@ -10,7 +10,7 @@ define([
 ], function (
     core,
     model,
-    stateChartBuilder,
+    stateChartFactory,
     stateChartRuntime,
     stateKinds,
     stateChartTransitionSelector,
@@ -23,8 +23,8 @@ define([
         array = core.array,
         enumerable = core.linq.enumerable;
 
-    return function create(spec) {
-        var builder,
+    return function statechart(spec) {
+        var factory,
             runtime,
             transitionSelector,
             configuration = [],
@@ -466,21 +466,26 @@ define([
             return getConfiguration();
         }
 
+        function getSpecification() {
+            return spec;
+        }
+
         // initialize all parts
         transitionSelector = stateChartTransitionSelector();
 
-        builder = stateChartBuilder();
-        builder.build(spec);
+        factory = stateChartFactory();
+        factory.create(spec);
 
-        configuration.push(builder.getRoot().initial || builder.getRoot());
+        configuration.push(factory.getRoot().initial || factory.getRoot());
         runtime = stateChartRuntime();
 
         return {
-            builder: builder,
+            factory: factory,
             start: start,
             raise: eventRaiser(raiseEvent),
             getConfiguration: getConfiguration,
-            getFullConfiguration: getFullConfiguration
+            getFullConfiguration: getFullConfiguration,
+            getSpecification: getSpecification
         };
     };
 });

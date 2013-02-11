@@ -5,16 +5,16 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart,
+    var statechart = core.statechart.statechart,
         enumerable = core.linq.enumerable;
 
-    describe('builder', function () {
+    describe('factory', function () {
         it('empty', function () {
             var sc = statechart({
                     id: 'root'
                 }),
-                states = sc.builder.getStates(),
-                transitions = sc.builder.getTransitions();
+                states = sc.factory.getStates(),
+                transitions = sc.factory.getTransitions();
 
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['root']);
             expect(transitions).toEqual([]);
@@ -28,7 +28,7 @@ define([
                     }, {
                     }]
                 }),
-                states = sc.builder.getStates();
+                states = sc.factory.getStates();
 
             expect(enumerable.from(states).orderBy('$.depth').select('$.id').toArray())
                 .toEqual(['root', 'state_1', 'state_3', 'initial_2', 'state_2', 'initial_1']);
@@ -43,8 +43,8 @@ define([
                         id: 's2'
                     }]
                 }),
-                states = sc.builder.getStates(),
-                transitions = sc.builder.getTransitions();
+                states = sc.factory.getStates(),
+                transitions = sc.factory.getTransitions();
 
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'initial_1', 'root']);
             expect(enumerable.from(transitions).select('$.source.id').toArray()).toEqual(['initial_1']);
@@ -62,8 +62,8 @@ define([
                         id: 's2'
                     }]
                 }),
-                states = sc.builder.getStates(),
-                transitions = sc.builder.getTransitions();
+                states = sc.factory.getStates(),
+                transitions = sc.factory.getTransitions();
 
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'initial_1', 'root']);
             expect(enumerable.from(transitions).select('$.source.id').toArray()).toEqual(['initial_1']);
@@ -81,8 +81,8 @@ define([
                         initial: true
                     }]
                 }),
-                states = sc.builder.getStates(),
-                transitions = sc.builder.getTransitions();
+                states = sc.factory.getStates(),
+                transitions = sc.factory.getTransitions();
 
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'initial_1', 'root']);
             expect(enumerable.from(transitions).select('$.source.id').toArray()).toEqual(['initial_1']);
@@ -102,8 +102,8 @@ define([
                         initial: true
                     }]
                 }),
-                states = sc.builder.getStates(),
-                transitions = sc.builder.getTransitions();
+                states = sc.factory.getStates(),
+                transitions = sc.factory.getTransitions();
 
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'initial_1', 'root']);
             expect(transitions[0].events).toEqual(['test']);
@@ -121,8 +121,8 @@ define([
                         initial: true
                     }]
                 }),
-                states = sc.builder.getStates(),
-                transitions = sc.builder.getTransitions();
+                states = sc.factory.getStates(),
+                transitions = sc.factory.getTransitions();
 
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'initial_1', 'root']);
             expect(transitions[0].events).toEqual(['*']);
@@ -142,7 +142,7 @@ define([
                         }]
                     }]
                 }),
-                states = sc.builder.getStates();
+                states = sc.factory.getStates();
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['a', 'b', 'p', 'initial_1', 'root']);
             expect(states[2].kind).toBe(2);
         });

@@ -18,7 +18,8 @@ define([
 
     require([
         './scalejs.statechart.test',
-        './builder.test',
+        './statechart.factory.test',
+        './statechart.builder.test',
         './statechart.spotchecks.test',
         './statechart.initial.test',
         './statechart.basic.test',

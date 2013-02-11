@@ -5,7 +5,7 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart;
+    var statechart = core.statechart.statechart;
 
     describe('statechart initial', function () {
         it('transits to single child state', function () {

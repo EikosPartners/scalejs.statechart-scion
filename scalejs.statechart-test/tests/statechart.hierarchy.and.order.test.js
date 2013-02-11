@@ -5,7 +5,7 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart;
+    var statechart = core.statechart.statechart;
 
     describe('statechart hierarchy and document order', function () {
         it('0', function () {

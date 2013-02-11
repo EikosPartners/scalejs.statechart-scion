@@ -5,7 +5,7 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart;
+    var statechart = core.statechart.statechart;
 
     describe('satechart parallel', function () {
         it('0', function () {

@@ -1,14 +1,21 @@
 /*global define*/
 define([
     'scalejs!core',
-    './scalejs.statechart/statechart'
+    './scalejs.statechart/statechart',
+    './scalejs.statechart/builder'
 ], function (
     core,
-    statechart
+    statechart,
+    builder
 ) {
     'use strict';
 
-    core.registerExtension({ statechart: statechart });
+    core.registerExtension({
+        statechart: {
+            statechart: statechart,
+            builder: builder
+        }
+    });
 });
 
 

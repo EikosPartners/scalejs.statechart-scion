@@ -84,31 +84,44 @@ define([
         });
 
         it('2', function () {
-            /*statechart(
-                state('a')
-                    .onEntry(function () {})
-                    .transition(function (data, event) {
-                        if (data.i < 100) {
+            /*
+            {
+                states: [{
+                    id: 'a',
+                    transitions: [{
+                        event: 't',
+                        action: function () {
                             return 'b';
-                        } else {
-                            data.i += 1;
                         }
-                    })
+                    }, {
+                        action: function () {
+                            return 'c';
+                        }
+                    }]
+                }]
+            }
+
+            */
+            /*statechart({
+                state('a')
+                .on(function (data, event) { return data.i < 100; })
+                .goto('b', function (data) { data.i = data.i += 1; }),
                 state('A', 
-                    state('b', 
-                        when(function (data) { return data.i < 100; })
-                        .run(function (data) { data.i = data.i + 1; })
-                        .goto('c')),
-                    state('c', 
-                        when(function (data) { return data.i < 100; })
-                        .run(function (data) { data.i = data.i + 1; })
-                        .goto('b'))),
-                    when(function (data) { return data.i === 100; })
-                    .run(function (data) { data.i = data.i * 2; }),
-                    .goto('d'),
-                goto('f'),
-                'd',
-                'f')*/
+                    state('b') 
+                    .on(function (data) { return data.i < 100; })
+                    .goto('c', function (data) { data.i = data.i += 1; }),
+
+                    state('c')
+                    .on(function (data) { return data.i < 100; })
+                    .goto('b', function (data) { data.i = data.i += 1; }))
+                .on(function (data) {
+                    if (data.i == 100) {
+                        return 'd';
+                    }
+                })
+                .on(function () { return 'f'; }),
+                state('d'),
+                state('f')*/
             var sc = statechart({
                 states: [{
                     id: 'a',

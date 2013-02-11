@@ -8,18 +8,6 @@ define([
     var statechart = core.statechart;
 
     describe('statechart', function () {
-        it('transits to default single state', function () {
-            var sc = statechart({
-                    id: 'root',
-                    states: [{
-                        id: 's1'
-                    }]
-                });
-            sc.start();
-
-            expect(sc.getFullConfiguration()).toEqual(['s1', 'root']);
-        });
-
         it('executes onEntry', function () {
             var inS1 = false,
                 sc = statechart({

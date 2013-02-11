@@ -1,4 +1,4 @@
-/*global define,describe,expect,it*/
+/*global define,describe,expect,it,jasmine*/
 /*jslint sloppy: true*/
 /// <reference path="../Scripts/jasmine.js"/>
 define([
@@ -16,7 +16,6 @@ define([
                 states = sc.builder.getStates(),
                 transitions = sc.builder.getTransitions();
 
-            expect(states.length).toBe(1);
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['root']);
             expect(transitions).toEqual([]);
         });
@@ -31,7 +30,6 @@ define([
                 }),
                 states = sc.builder.getStates();
 
-            expect(states.length).toBe(6);
             expect(enumerable.from(states).orderBy('$.depth').select('$.id').toArray())
                 .toEqual(['root', 'state_1', 'state_3', 'initial_2', 'state_2', 'initial_1']);
         });
@@ -47,9 +45,8 @@ define([
                 }),
                 states = sc.builder.getStates(),
                 transitions = sc.builder.getTransitions();
-            expect(states.length).toBe(4);
+
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'initial_1', 'root']);
-            expect(transitions.length).toBe(1);
             expect(enumerable.from(transitions).select('$.source.id').toArray()).toEqual(['initial_1']);
             expect(enumerable.from(transitions).select('$.targets.length').toArray()).toEqual([1]);
             expect(enumerable.from(transitions).select('$.targets[0].id').toArray()).toEqual(['s1']);
@@ -67,9 +64,8 @@ define([
                 }),
                 states = sc.builder.getStates(),
                 transitions = sc.builder.getTransitions();
-            expect(states.length).toBe(4);
+
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'initial_1', 'root']);
-            expect(transitions.length).toBe(1);
             expect(enumerable.from(transitions).select('$.source.id').toArray()).toEqual(['initial_1']);
             expect(enumerable.from(transitions).select('$.targets.length').toArray()).toEqual([1]);
             expect(enumerable.from(transitions).select('$.targets[0].id').toArray()).toEqual(['s2']);
@@ -87,9 +83,11 @@ define([
                 }),
                 states = sc.builder.getStates(),
                 transitions = sc.builder.getTransitions();
-            expect(states.length).toBe(3);
-            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'root']);
-            expect(transitions).toEqual([]);
+
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['s1', 's2', 'initial_1', 'root']);
+            expect(enumerable.from(transitions).select('$.source.id').toArray()).toEqual(['initial_1']);
+            expect(enumerable.from(transitions).select('$.targets.length').toArray()).toEqual([1]);
+            expect(enumerable.from(transitions).select('$.targets[0].id').toArray()).toEqual(['s2']);
         });
 
         it('transition with a `test.*` pattern', function () {
@@ -106,9 +104,8 @@ define([
                 }),
                 states = sc.builder.getStates(),
                 transitions = sc.builder.getTransitions();
-            expect(states.length).toBe(3);
-            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'root']);
-            expect(transitions.length).toEqual(1);
+
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'initial_1', 'root']);
             expect(transitions[0].events).toEqual(['test']);
         });
 
@@ -126,9 +123,8 @@ define([
                 }),
                 states = sc.builder.getStates(),
                 transitions = sc.builder.getTransitions();
-            expect(states.length).toBe(3);
-            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'root']);
-            expect(transitions.length).toEqual(1);
+
+            expect(enumerable.from(states).select('$.id').toArray()).toEqual(['state_1', 's2', 'initial_1', 'root']);
             expect(transitions[0].events).toEqual(['*']);
         });
 
@@ -147,7 +143,6 @@ define([
                     }]
                 }),
                 states = sc.builder.getStates();
-            expect(states.length).toBe(5);
             expect(enumerable.from(states).select('$.id').toArray()).toEqual(['a', 'b', 'p', 'initial_1', 'root']);
             expect(states[2].kind).toBe(2);
         });

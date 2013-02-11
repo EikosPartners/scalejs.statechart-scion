@@ -319,9 +319,6 @@ define([
                 // -> Concurrency: Number of transitions: Multiple
                 // -> Concurrency: Order of transitions: Explicitly defined
                 sortedTransitions = enumerable.from(selectedTransitions).orderBy('$.documentOrder').toArray();
-                /*sortedTransitions = selectedTransitions.iter().sort(function (t1, t2) {
-                    return t1.documentOrder - t2.documentOrder;
-                });*/
 
                 if (printTrace) {
                     log("executing transitition actions");

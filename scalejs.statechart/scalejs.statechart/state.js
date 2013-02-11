@@ -15,11 +15,19 @@ define([
         enumerable = core.linq.enumerable,
         array = core.array;
 
-    return function state(spec, ancestors, context) {
-        var self = {};
+    return function state(spec, ancestorIds, context) {
+        var self = {
+            onEntry: spec.onEntry,
+            onExit: spec.onExit,
+            depth: ancestorIds.length,
+            ancestorIds: array.copy(ancestorIds),
+            descendantIds: [],
+            childrenIds: [],
+            transitionIds: []
+        };
 
         function genId(group) {
-            if (ancestors.length === 0) {
+            if (ancestorIds.length === 0) {
                 return 'root';
             }
 
@@ -32,13 +40,11 @@ define([
             return id;
         }
 
-        function parent() {
-            return ancestors.length > 0 ? ancestors[ancestors.length - 1] : undefined;
+        function parentId() {
+            self.parentId = ancestorIds.length > 0 ? ancestorIds[ancestorIds.length - 1] : undefined;
         }
 
         function id() {
-            var stateId;
-
             if (has(spec, 'id')) {
                 if (context.idToStateMap.hasOwnProperty(spec.id)) {
                     throw {
@@ -46,56 +52,74 @@ define([
                         message: 'Duplicate state id `' + spec.id + '`. State id-s must be unique.'
                     };
                 }
-                stateId = spec.id;
+                self.id = spec.id;
             } else {
-                stateId = genId(spec.initial === true ? 'initial' : 'state');
+                self.id = genId(spec.initial === true ? 'initial' : 'state');
             }
 
-            context.idToStateMap[stateId] = self;
-
-            return stateId;
+            context.idToStateMap[self.id] = self;
         }
 
         function kind() {
             var parentState;
             if (spec.parallel) {
-                return stateKinds.PARALLEL;
+                self.kind = stateKinds.PARALLEL;
+                return;
             }
 
             if (has(spec, 'states')) {
-                return stateKinds.COMPOSITE;
+                self.kind = stateKinds.COMPOSITE;
+                return;
             }
 
             if (spec.history) {
-                return stateKinds.HISTORY;
+                self.kind = stateKinds.HISTORY;
+                return;
             }
 
             // spec.initial maybe a boolean indicating the state is initial on the parent,
             // or a string indicating an id of the child state that should be initial
             // Therefore state is initial only if the flag is boolean and is true
             if (spec.initial === true) {
-                parentState = context.idToStateMap[parent()];
+                parentState = context.idToStateMap[self.parentId];
                 // set this state as parent's initial
                 if (has(parentState, 'initial')) {
                     throw new Error('Duplicate initial states in state "' + self.id + '".');
                 }
 
                 if (parentState) {
-                    parentState.initial = self.id;
+                    parentState.initialId = self.id;
                 }
 
-                return stateKinds.INITIAL;
-            }
-            if (spec.final) {
-                return stateKinds.FINAL;
+                self.kind = stateKinds.INITIAL;
+                return;
             }
 
-            return stateKinds.BASIC;
+            if (spec.final) {
+                self.kind = stateKinds.FINAL;
+                return;
+            }
+
+            self.kind = stateKinds.BASIC;
+        }
+
+        function children() {
+            if (!has(spec, 'states')) {
+                return;
+            }
+
+            var nextAncestorIds = ancestorIds.concat(self.id),
+                stateIds = array.map(spec.states, function (child) {
+                    var st = state(child, nextAncestorIds, context);
+                    return st.id;
+                });
+
+            self.childrenIds = stateIds;
         }
 
         function transitions() {
             if (!has(spec, 'transitions')) {
-                return [];
+                return;
             }
 
             var transitionIds = enumerable
@@ -105,13 +129,13 @@ define([
                     return trans.id;
                 }).toArray();
 
-            return transitionIds;
+            self.transitionIds = transitionIds;
         }
 
         function documentOrder() {
             context.states.push(self);
 
-            return context.states.length - 1;
+            self.documentOrder = context.states.length - 1;
         }
 
         function basicDocumentOrder() {
@@ -120,65 +144,51 @@ define([
                         self.kind === stateKinds.HISTORY) {
                 context.basicStates.push(self);
 
-                return context.basicStates.length - 1;
+                self.basicDocumentOrder = context.basicStates.length - 1;
             }
-        }
-
-        function children() {
-            if (!has(spec, 'states')) {
-                return [];
-            }
-
-            var nextAncestors = ancestors.concat(self.id),
-                states = enumerable
-                    .from(spec.states)
-                    .select(function (child) {
-                        var st = state(child, nextAncestors, context);
-                        return st.id;
-                    })
-                    .toArray();
-
-            return states;
         }
 
         function initial() {
             var generatedInitial,
-                generatedInitialId;/*,
-                initials = array.filter(self.children, function (s) {
-                    return s.kind === stateKinds.INITIAL;
-                });
-            
-            if (initials.length > 1) {
-                throw new Error('Duplicate initial states in state "' + self.id + '".');
-            }
-
-            if (initials.length === 1) {
-                return initials[0].id;
-            }*/
-
-            // if initial is already set by one of the children simply return it
-            if (self.initial) {
-                return self.initial;
-            }
+                generatedInitialId;
 
             // parallel states and states with no children don't have initial.
-            if (self.kind === stateKinds.PARALLEL ||
-                    self.children.length === 0) {
-                return undefined;
+            if (self.kind === stateKinds.PARALLEL || self.childrenIds.length === 0) {
+                return;
             }
 
-            generatedInitialId = spec.initial || self.children[0];
+            // initialId could've been set by one of the children (marked with initial:true)
+            // or it can be specified in spec
+            // otherwise first child is default initial
+            generatedInitialId = self.initialId || spec.initial || self.childrenIds[0];
+            // Generate initial state that would transit to initial state right away.
+            // This way we make sure initial state's onEntry is executed.
             generatedInitial = state({
                 initial: true,
                 transitions: [{
                     target: generatedInitialId
                 }]
-            }, ancestors.concat(self.id), context);
-            self.children.push(generatedInitial);
+            }, ancestorIds.concat(self.id), context);
 
-            return generatedInitial.id;
+            self.childrenIds.push(generatedInitial.id);
+            self.initialId = generatedInitial.id;
         }
 
+        function descendants() {
+            array.iter(ancestorIds, function (ancestor) {
+                context.idToStateMap[ancestor].descendantIds.push(self.id);
+            });
+        }
+
+        id();
+        parentId();
+        kind();
+        children();
+        transitions();
+        initial();
+        documentOrder();
+        basicDocumentOrder();
+        /*
         self.id = id();
         self.kind = kind();
         self.descendants = [];
@@ -192,11 +202,9 @@ define([
         self.basicDocumentOrder = basicDocumentOrder();
         self.depth = ancestors.length;
         self.ancestors = ancestors.slice();
-
+        */
         //walk back up ancestors and add this state to lists of descendants
-        array.iter(ancestors, function (ancestor) {
-            context.idToStateMap[ancestor].descendants.push(self.id);
-        });
+        descendants();
 
         return self;
     };

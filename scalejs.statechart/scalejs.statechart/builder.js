@@ -24,16 +24,16 @@ define([
 
         function resolveStates() {
             array.iter(context.states, function (s) {
-                s.ancestors.reverse();
-                s.descendants.reverse();
+                s.ancestorIds.reverse();
+                s.descendantIds.reverse();
                 // resolve states
-                s.initial = stateById(s.initial);
+                s.initial = stateById(s.initialId);
                 s.history = stateById(s.history);
-                s.children = array.map(s.children, stateById);
-                s.parent = stateById(s.parent);
-                s.ancestors = array.map(s.ancestors, stateById);
-                s.descendants = array.map(s.descendants, stateById);
-                s.transitions = array.map(s.transitions, function (t) { return context.transitions[t]; });
+                s.children = array.map(s.childrenIds, stateById);
+                s.parent = stateById(s.parentId);
+                s.ancestors = array.map(s.ancestorIds, stateById);
+                s.descendants = array.map(s.descendantIds, stateById);
+                s.transitions = array.map(s.transitionIds, function (t) { return context.transitions[t]; });
             });
         }
 

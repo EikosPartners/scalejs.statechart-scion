@@ -67,9 +67,19 @@ define([
             };
         }
 
+        function commit(datamodelForNextStep) {
+            var key;
+            for (key in datamodelForNextStep) {
+                if (datamodelForNextStep.hasOwnProperty(key)) {
+                    datamodel[key] = datamodelForNextStep[key];
+                }
+            }
+        }
+
         return {
             runAction: runAction,
-            transitionConditionEvaluator: transitionConditionEvaluator
+            transitionConditionEvaluator: transitionConditionEvaluator,
+            commit: commit
         };
     };
 });

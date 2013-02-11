@@ -241,8 +241,7 @@ define([
                 basicStatesEntered,
                 statesEntered,
                 eventsToAddToInnerQueue,
-                sortedTransitions,
-                key;
+                sortedTransitions;
 
             if (printTrace) {
                 log("selecting transitions with eventSet: ", eventSet);
@@ -392,11 +391,7 @@ define([
                 }
 
                 //update the datamodel
-                for (key in datamodelForNextStep) {
-                    if (datamodelForNextStep.hasOwnProperty(key)) {
-                        runtime.setData(key, datamodelForNextStep[key]);
-                    }
-                }
+                runtime.commit(datamodelForNextStep);
             }
 
             // if selectedTransitions is empty, we have reached a stable state, 

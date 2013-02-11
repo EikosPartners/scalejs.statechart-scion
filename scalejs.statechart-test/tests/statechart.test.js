@@ -7,7 +7,7 @@ define([
 ], function (core) {
     var statechart = core.statechart;
 
-    describe('`statechart`', function () {
+    describe('statechart', function () {
         it('transits to default single state', function () {
             var sc = statechart({
                     id: 'root',

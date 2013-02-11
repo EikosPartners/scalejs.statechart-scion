@@ -20,7 +20,12 @@ define([
         './scalejs.statechart.test',
         './builder.test',
         './statechart.test',
-        './statechart.functional.test'
+        './statechart.basic.test',
+        './statechart.order.test',
+        './statechart.hierarchy.test',
+        './statechart.hierarchy.and.order.test',
+        './statechart.parallel.test',
+        './statechart.action.raise.test'
     ], function () {
         jasmineEnv.execute();
     });

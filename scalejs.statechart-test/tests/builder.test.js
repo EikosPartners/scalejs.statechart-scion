@@ -8,7 +8,7 @@ define([
     var statechart = core.statechart,
         enumerable = core.linq.enumerable;
 
-    describe('`builder`', function () {
+    describe('builder', function () {
         it('empty', function () {
             var sc = statechart({
                     id: 'root'
@@ -136,7 +136,7 @@ define([
             var sc = statechart({
                     initial: 'p',
                     states: [{
-                        id: 'p', 
+                        id: 'p',
                         parallel: true,
                         states: [{
                             id: 'a'

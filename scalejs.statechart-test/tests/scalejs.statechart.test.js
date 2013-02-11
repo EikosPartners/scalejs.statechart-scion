@@ -7,7 +7,7 @@ define([
 ], function (core) {
     var statechart = core.statechart;
 
-    describe('`statechart` extension', function () {
+    describe('statechart extension', function () {
         it('is defined', function () {
             expect(statechart).toBeDefined();
         });

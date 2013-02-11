@@ -27,6 +27,12 @@
     <Content Include="Scripts\scalejs.statechart-0.2.0.min.js" />
     <Content Include="tests\all.tests.js" />
     <Content Include="tests\builder.test.js" />
+    <Content Include="tests\statechart.action.raise.test.js" />
+    <Content Include="tests\statechart.hierarchy.and.order.test.js" />
+    <Content Include="tests\statechart.hierarchy.test.js" />
+    <Content Include="tests\statechart.order.test.js" />
+    <Content Include="tests\statechart.parallel.test.js" />
+    <Content Include="tests\statechart.basic.test.js" />
     <Content Include="tests\scalejs.statechart.test.js" />
     <Content Include="tests\statechart.test.js" />
   </ItemGroup>

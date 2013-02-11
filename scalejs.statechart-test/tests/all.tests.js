@@ -26,7 +26,8 @@ define([
         './statechart.hierarchy.and.order.test',
         './statechart.parallel.test',
         './statechart.action.raise.test',
-        './scalejs.statechart.set.current.small.step.test'
+        './scalejs.statechart.set.current.small.step.test',
+        './scalejs.statechart.set.next.small.step.test'
     ], function () {
         jasmineEnv.execute();
     });

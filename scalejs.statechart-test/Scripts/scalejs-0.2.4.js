@@ -530,45 +530,33 @@ define('scalejs/base.log',[
         return 'Error: ' + message + '\nStack: ' + stack;
     }
 
-    function info(message) {
+    function info() {
         if (has(window, 'console', 'info')) {
-            window.console.info(message);
-            for (var i = 1; i < arguments.length; i += 1) {
-                window.console.info(arguments[i]);
-            }
+            window.console.info.apply(window.console, arguments);
         }
     }
 
-    function warn(message) {
+    function warn() {
         if (has(window, 'console', 'warn')) {
-            window.console.warn(message);
-            for (var i = 1; i < arguments.length; i += 1) {
-                window.console.warn(arguments[i]);
-            }
+            window.console.warn.apply(window.console, arguments);
             return;
         }
 
         info(arguments);
     }
 
-    function error(message) {
+    function error() {
         if (has(window, 'console', 'error')) {
-            window.console.error(message);
-            for (var i = 1; i < arguments.length; i += 1) {
-                window.console.error(arguments[i]);
-            }
+            window.console.error.apply(window.console, arguments);
             return;
         }
 
         info(arguments);
     }
 
-    function debug(message) {
+    function debug() {
         if (has(window, 'console', 'debug')) {
-            window.console.debug(message);
-            for (var i = 1; i < arguments.length; i += 1) {
-                window.console.debug(arguments[i]);
-            }
+            window.console.debug.apply(window.console, arguments);
             return;
         }
 

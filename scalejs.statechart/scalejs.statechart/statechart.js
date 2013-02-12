@@ -166,8 +166,10 @@ define([
                 processState(target);
 
                 //and process ancestors of targets up to LCA, but according to special rules
-                var lca = model.getLCA(source, target);
-                model.getAncestors(target, lca).forEach(function (s) {
+                var lca = model.getLCA(source, target),
+                    ancestors = model.getAncestors(target, lca);
+
+                array.iter(ancestors, function (s) {
                     if (s.kind === stateKinds.COMPOSITE) {
                         //just add him to statesToEnter, and declare him processed
                         //this is to prevent adding his initial state later on

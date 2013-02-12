@@ -27,6 +27,7 @@ define([
         './statechart.hierarchy.test',
         './statechart.hierarchy.and.order.test',
         './statechart.parallel.test',
+        './statechart.more-parallel.test',
         './statechart.action.raise.test',
         './scalejs.statechart.set.current.small.step.test',
         './scalejs.statechart.set.next.small.step.test'

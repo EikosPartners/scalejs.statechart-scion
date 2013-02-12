@@ -22,8 +22,8 @@
     <Content Include="scalejs.statechart\state.js" />
     <Content Include="scalejs.statechart\statechart.js" />
     <Content Include="scalejs.statechart\transition.js" />
-    <Content Include="Scripts\scalejs-0.2.0.js" />
-    <Content Include="Scripts\scalejs-0.2.0.min.js" />
+    <Content Include="Scripts\scalejs-0.2.4.js" />
+    <Content Include="Scripts\scalejs-0.2.4.min.js" />
     <Content Include="tools\install.ps1" />
     <Content Include="tools\uninstall.ps1" />
     <Content Include="bootstrapper.js" />

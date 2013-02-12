@@ -16,7 +16,9 @@ define([
 
         index = state.ancestors.indexOf(root);
         if (index > -1) {
-            return state.ancestors.slice(0, index);
+            // SCION doesn't include root - not sure if it's correct
+            // (this seems to fail more-parallel tests)
+            return state.ancestors.slice(0, index + 1);
         }
         return state.ancestors;
     }

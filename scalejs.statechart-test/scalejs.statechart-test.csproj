@@ -19,13 +19,14 @@
     <Content Include="Scripts\linq.js" />
     <Content Include="Scripts\linq.min.js" />
     <Content Include="Scripts\require.js" />
-    <Content Include="Scripts\scalejs-0.2.3.js" />
-    <Content Include="Scripts\scalejs-0.2.3.min.js" />
+    <Content Include="Scripts\scalejs-0.2.4.js" />
+    <Content Include="Scripts\scalejs-0.2.4.min.js" />
     <Content Include="Scripts\scalejs.linq-0.2.0.js" />
     <Content Include="Scripts\scalejs.linq-0.2.0.min.js" />
     <Content Include="Scripts\scalejs.statechart-0.2.0.js" />
     <Content Include="Scripts\scalejs.statechart-0.2.0.min.js" />
     <Content Include="tests\all.tests.js" />
+    <Content Include="tests\statechart.more-parallel.test.js" />
     <Content Include="tests\statechart.builder.test.js" />
     <Content Include="tests\statechart.factory.test.js" />
     <Content Include="tests\statechart.initial.test.js" />

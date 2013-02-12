@@ -5,42 +5,26 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart.statechart;
+    var statechart = core.statechart.builder.statechart,
+        state = core.statechart.builder.state,
+        parallel = core.statechart.builder.parallel;
 
     describe('statechart `set` current small step', function () {
         it('0', function () {
-            var sc = statechart({
-                states: [{
-                    id: 'a',
-                    onEntry: function () {
-                        this.set('a', -1);
-                        this.set('a', 99);
-                    },
-                    transitions: [{
-                        event: 't',
-                        target: 'b',
-                        condition: function () {
-                            return this.get('a') === 99;
-                        },
-                        action: function () {
-                            this.set('a', this.get('a') + 1);
-                        }
-                    }]
-                }, {
-                    id: 'b',
-                    onEntry: function () {
-                        this.set('a', this.get('a') * 2);
-                    },
-                    transitions: [
-                        {target: 'c', condition: function () { return this.get('a') === 200; }},
-                        {target: 'f'}
-                    ]
-                }, {
-                    id: 'c'
-                }, {
-                    id: 'f'
-                }]
-            });
+            var sc = statechart(
+                state('a')
+                    .onEntry(function () {
+                        this.a = -1;
+                        this.a = 99;
+                    })
+                    .on('t', function () { return this.a === 99; }).goto('b', function () { this.a += 1; }),
+                state('b')
+                    .onEntry(function () { this.a = this.a * 2; })
+                    .on(function () { return this.a === 200; }).goto('c')
+                    .goto('f'),
+                state('c'),
+                state('f')
+            );
             sc.start();
 
             expect(sc.getConfiguration()).toEqual(['a']);
@@ -51,142 +35,57 @@ define([
         });
 
         it('1', function () {
-            var sc = statechart({
-                states: [{
-                    id: 'a',
-                    transitions: [{
-                        target: 'b',
-                        event: 't',
-                        action: function () { this.set('i', 0); }
-                    }]
-                }, {
-                    id: 'b',
-                    transitions: [{
-                        target: 'b',
-                        condition: function () { return this.get('i') < 100; },
-                        action: function () { this.set('i', this.get('i') + 1); }
-                    }, {
-                        target: 'c',
-                        condition: function () { return this.get('i') === 100; }
-                    }]
-                }, {
-                    id: 'c'
-                }]
-            });
+            var sc = statechart(
+                state('a').on('t').goto('b', function () { this.i = 0; }),
+                state('b')
+                    .on(function () { return this.i < 100; }).goto('b', function () { this.i += 1; })
+                    .on(function () { return this.i === 100; }).goto('c'),
+                state('c')
+            );
 
             sc.start();
-
             expect(sc.getConfiguration()).toEqual(['a']);
 
             sc.raise('t');
-
             expect(sc.getConfiguration()).toEqual(['c']);
         });
 
         it('2', function () {
-            var sc = statechart({
-                states: [{
-                    id: 'a',
-                    transitions: [{
-                        target: 'b',
-                        event: 't',
-                        action: function () { this.set('i', 0); }
-                    }]
-                }, {
-                    id: 'A',
-                    states: [{
-                        id: 'b',
-                        transitions: [{
-                            target: 'c',
-                            condition: function () { return this.get('i') < 100; },
-                            action: function () { this.set('i', this.get('i') + 1); }
-                        }]
-                    }, {
-                        id: 'c',
-                        transitions: [{
-                            target: 'b',
-                            condition: function () { return this.get('i') < 100; },
-                            action: function () { this.set('i', this.get('i') + 1); }
-                        }]
-                    }],
-                    transitions: [{
-                        target: 'd',
-                        condition: function () { return this.get('i') === 100; },
-                        action: function () { this.set('i', this.get('i') * 2); }
-                    }]
-                }, {
-                    id: 'd',
-                    transitions: [
-                        {target: 'e', condition: function () { return this.get('i') === 200; }},
-                        {target: 'f'}
-                    ]
-                }, {
-                    id: 'e'
-                }, {
-                    id: 'f'
-                }]
-            });
+            var sc = statechart(
+                state('a').on('t').goto('b', function () { this.i = 0; }),
+                state('A',
+                    state('b').on(function () { return this.i < 100; }).goto('c', function () { this.i += 1; }),
+                    state('c').on(function () { return this.i < 100; }).goto('b', function () { this.i += 1; })
+                    ).on(function () { return this.i === 100; }).goto('d', function () { this.i *= 2; }),
+                state('d')
+                    .on(function () { return this.i === 200; }).goto('e')
+                    .goto('f'),
+                state('e'),
+                state('f')
+            );
 
             sc.start();
-
             expect(sc.getConfiguration()).toEqual(['a']);
 
             sc.raise('t');
-
             expect(sc.getConfiguration()).toEqual(['e']);
         });
 
         it('3', function () {
-            var sc = statechart({
-                states: [{
-                    id: 'a',
-                    transitions: [{
-                        target: 'p',
-                        event: 't1',
-                        action: function () { this.set('i', 0); }
-                    }]
-                }, {
-                    id: 'p',
-                    parallel: true,
-                    states: [{
-                        id: 'b',
-                        states: [{
-                            id: 'b1',
-                            transitions: [{
-                                event: 't2',
-                                target: 'b2',
-                                action: function () {
-                                    this.set('i', this.get('i') + 1);
-                                }
-                            }]
-                        }, {
-                            id: 'b2'
-                        }]
-                    }, {
-                        id: 'c',
-                        states: [{
-                            id: 'c1',
-                            transitions: [{
-                                event: 't2',
-                                target: 'c2',
-                                action: function () {
-                                    this.set('i', this.get('i') - 1);
-                                }
-                            }]
-                        }, {
-                            id: 'c2'
-                        }]
-                    }],
-                    transitions: [
-                        {event: 't3', target: 'd', condition: function () { return this.get('i') === 0; } },
-                        {event: 't3', target: 'f'}
-                    ]
-                }, {
-                    id: 'd'
-                }, {
-                    id: 'f'
-                }]
-            });
+            var sc = statechart(
+                state('a').on('t1').goto('p', function () { this.i = 0; }),
+                parallel('p',
+                    state('b',
+                        state('b1').on('t2').goto('b2', function () { this.i += 1; }),
+                        state('b2')),
+                    state('c',
+                        state('c1').on('t2').goto('c2', function () { this.i -= 1; }),
+                        state('c2'))
+                    ).on('t3', function () { return this.i === 0; }).goto('d')
+                     .on('t3').goto('f'),
+                state('d'),
+                state('f')
+            );
 
             sc.start();
             expect(sc.getConfiguration()).toEqual(['a']);
@@ -202,39 +101,17 @@ define([
         });
 
         it('4', function () {
-            var sc = statechart({
-                states: [{
-                    id: 'a',
-                    onEntry: function () {
-                        this.set('x', 2);
-                    },
-                    transitions: [{event: 't', target: 'b1'}]
-                }, {
-                    id: 'b',
-                    onEntry: function () {
-                        this.set('x', this.get('x') * 3);
-                    },
-                    states: [{
-                        id: 'b1',
-                        onEntry: function () {
-                            this.set('x', this.get('x') * 5);
-                        }
-                    }, {
-                        id: 'b2',
-                        onEntry: function () {
-                            this.set('x', this.get('x') * 7);
-                        }
-                    }],
-                    transitions: [
-                        {target: 'c', condition: function () { return this.get('x') === 30; }},
-                        {target: 'f'}
-                    ]
-                }, {
-                    id: 'c'
-                }, {
-                    id: 'f'
-                }]
-            });
+            var sc = statechart(
+                state('a').onEntry(function () { this.x = 2; }).on('t').goto('b1'),
+                state('b',
+                    state('b1').onEntry(function () { this.x *= 5; }),
+                    state('b2').onEntry(function () { this.x *= 7; })
+                    ).onEntry(function () { this.x *= 3; })
+                     .on(function () { return this.x === 30; }).goto('c')
+                     .goto('f'),
+                state('c'),
+                state('f')
+            );
 
             sc.start();
             expect(sc.getConfiguration()).toEqual(['a']);

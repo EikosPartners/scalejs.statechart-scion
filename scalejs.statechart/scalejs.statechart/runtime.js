@@ -11,12 +11,14 @@ define([
     var // imports
         has = core.object.has,
         array = core.array,
-        log = core.log.debug;
+        log = core.log.debug,
+        merge = core.object.merge;
 
     return function runtime() {
         var datamodel = {};
 
-        function createActionContext(datamodelForNextStep, eventsToAddToInnerQueue) {
+        function createActionContext(eventsToAddToInnerQueue) {
+            /*
             function get(key) {
                 return datamodelForNextStep.hasOwnProperty(key)
                         ? datamodelForNextStep[key]
@@ -25,7 +27,7 @@ define([
 
             function set(key, value) {
                 datamodelForNextStep[key] = value;
-            }
+            }*/
 
             function raiseEvent(event) {
                 // if eventsToAddToInnerQueue is not defined it means raiseEvent is called
@@ -39,18 +41,18 @@ define([
                 array.addOne(eventsToAddToInnerQueue, event);
             }
 
-            return {
-                get: get,
-                set: set,
-                raise: eventRaiser(raiseEvent)
-            };
+            return merge(datamodel, { raise: eventRaiser(raiseEvent) });
         }
 
         function runAction(action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
             log('Running action ' + action.name);
 
-            var actionContext = createActionContext(datamodelForNextStep, eventsToAddToInnerQueue),
-                result = action.call(actionContext, eventSet);
+            var actionContext = createActionContext(eventsToAddToInnerQueue),
+                result = action.call(actionContext, datamodelForNextStep, eventSet);
+
+            delete actionContext.raise;
+
+            datamodel = actionContext;
 
             log('Finished action ' + action.name);
 

@@ -5,7 +5,7 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart.builder.statechart,
+    var statechart = core.statechart.statechart,
         state = core.statechart.builder.state,
         parallel = core.statechart.builder.parallel;
 
@@ -71,12 +71,12 @@ define([
                 state('a').on('t1').goto('p', function () { this.i = 0; }),
                 parallel('p',
                     state('b',
-                        state('b1').on('t2').goto('b2', function () { this.i += 1; }),
+                        state('b1').on('t2').goto('b2', function () { this.i = this.bigstep.i + 1; }),
                         state('b2')),
                     state('c',
-                        state('c1').on('t2').goto('c2', function () { this.i -= 1; }),
+                        state('c1').on('t2').goto('c2', function () { this.i = this.bigstep.i - 1; }),
                         state('c2')))
-                    .on('t3', function () { return this.i === -1; }).goto('d')
+                    .on('t3', function () { return this.bigstep.i === -1; }).goto('d')
                     .on(function () { return this.i === 1; }).goto('f'),
                 state('d'),
                 state('f')

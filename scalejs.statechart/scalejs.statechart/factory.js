@@ -2,11 +2,13 @@
 define([
     'scalejs!core',
     './model',
-    './state'
+    './state',
+    './builder'
 ], function (
     core,
     model,
-    state
+    state,
+    builder
 ) {
     'use strict';
 
@@ -14,8 +16,9 @@ define([
         has = core.object.has,
         array = core.array;
 
-    return function builder() {
+    return function factory() {
         var context,
+            spec,
             root;
 
         function stateById(stateId) {
@@ -54,7 +57,17 @@ define([
             });
         }
 
-        function create(spec) {
+        function createSpec(specOrBuilder) {
+            if (arguments.length === 1 && !specOrBuilder.isBuilder) {
+                return specOrBuilder;
+            }
+
+            var scb = builder.state.apply(null, ['root'].concat(Array.prototype.slice.call(arguments, 0)));
+
+            return scb.state;
+        }
+
+        function create() {
             context  = {
                 states: [],
                 basicStates: [],
@@ -65,6 +78,7 @@ define([
                 uniqueIds: {}
             };
 
+            spec = createSpec.apply(null, arguments);
             root = state(spec, [], context);
 
             resolveStates();
@@ -75,6 +89,10 @@ define([
 
         function getRoot() {
             return root;
+        }
+
+        function getSpec() {
+            return spec;
         }
 
         function getStates() {
@@ -88,6 +106,7 @@ define([
         return {
             create: create,
             getRoot: getRoot,
+            getSpec: getSpec,
             getStates: getStates,
             getTransitions: getTransitions
         };

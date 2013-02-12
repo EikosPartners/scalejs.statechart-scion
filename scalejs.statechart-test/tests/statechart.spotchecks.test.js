@@ -125,7 +125,7 @@ define([
 
             expect(sc.getConfiguration()).toEqual(['s2']);
             expect(sc.getFullConfiguration()).toEqual(['s2', 'root']);
-            expect(action).toHaveBeenCalledWith({}, []);
+            expect(action).toHaveBeenCalledWith([]);
         });
 
         it('transits to proper state when an event is fired', function () {

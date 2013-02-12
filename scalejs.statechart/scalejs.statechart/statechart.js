@@ -23,7 +23,7 @@ define([
         array = core.array,
         enumerable = core.linq.enumerable;
 
-    return function statechart(spec) {
+    return function statechart() {
         var factory,
             runtime,
             transitionSelector,
@@ -34,7 +34,8 @@ define([
             listeners = [],
             printTrace = true,
             logStatesEnteredAndExited = false,
-            isStepping = false;
+            isStepping = false,
+            root;
 
         function conflicts(t1, t2) {
             return !model.isArenaOrthogonal(t1, t2);
@@ -94,7 +95,7 @@ define([
             return priorityEnabledTransitions;
         }
 
-        function selectTransitions(eventSet, datamodelForNextStep) {
+        function selectTransitions(eventSet) {
             var states,
                 eventNames,
                 enabledTransitions,
@@ -108,7 +109,7 @@ define([
                 .distinct()
                 .toArray();
 
-            transitionConditionEvaluator = runtime.transitionConditionEvaluator(eventSet, datamodelForNextStep);
+            transitionConditionEvaluator = runtime.transitionConditionEvaluator(eventSet);
             eventNames = enumerable.from(eventSet).select('$.name').toArray();
 
             enabledTransitions = enumerable.from(states)
@@ -233,7 +234,7 @@ define([
             return [basicStatesToEnter, sortedStatesEntered];
         }
 
-        function performSmallStep(eventSet, datamodelForNextStep) {
+        function performSmallStep(eventSet) {
             var selectedTransitions,
                 selectedTransitionsWithTargets,
                 exitedTuple,
@@ -245,11 +246,13 @@ define([
                 eventsToAddToInnerQueue,
                 sortedTransitions;
 
+            runtime.beginSmallStep();
+
             if (printTrace) {
                 log("selecting transitions with eventSet: ", eventSet);
             }
 
-            selectedTransitions = selectTransitions(eventSet, datamodelForNextStep);
+            selectedTransitions = selectTransitions(eventSet);
 
             if (selectedTransitions.length > 0) {
                 if (printTrace) {
@@ -298,7 +301,7 @@ define([
                     });
 
                     if (state.onExit !== undefined) {
-                        runtime.runAction(state.onExit, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.runAction(state.onExit, eventSet, eventsToAddToInnerQueue);
                     }
 
                     var f;
@@ -337,7 +340,7 @@ define([
                     });
 
                     if (transition.action) {
-                        runtime.runAction(transition.action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.runAction(transition.action, eventSet, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -357,7 +360,7 @@ define([
                     });
 
                     if (state.onEntry) {
-                        runtime.runAction(state.onEntry, eventSet, datamodelForNextStep, eventsToAddToInnerQueue);
+                        runtime.runAction(state.onEntry, eventSet, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -388,11 +391,9 @@ define([
                 if (printTrace) {
                     log("updating datamodel for next small step :");
                 }
-
-                //update the datamodel
-                runtime.commit(datamodelForNextStep);
             }
 
+            runtime.endSmallStep();
             // if selectedTransitions is empty, we have reached a stable state, 
             // and the big-step will stop, otherwise will continue -> Maximality: Take-Many
             return selectedTransitions;
@@ -405,15 +406,12 @@ define([
 
             var keepGoing = true,
                 eventSet,
-                datamodelForNextStep,
                 selectedTransitions;
 
             while (keepGoing) {
                 eventSet = innerEventQueue.length > 0 ? innerEventQueue.shift() : [];
 
-                //create new datamodel cache for the next small step
-                datamodelForNextStep = {};
-                selectedTransitions = performSmallStep(eventSet, datamodelForNextStep);
+                selectedTransitions = performSmallStep(eventSet);
                 keepGoing = enumerable.from(selectedTransitions).any();
             }
 
@@ -469,16 +467,16 @@ define([
         }
 
         function getSpecification() {
-            return spec;
+            return factory.getSpec();
         }
 
         // initialize all parts
         transitionSelector = stateChartTransitionSelector();
 
         factory = stateChartFactory();
-        factory.create(spec);
+        root = factory.create.apply(null, arguments);
 
-        configuration.push(factory.getRoot().initial || factory.getRoot());
+        configuration.push(root.initial || root);
         runtime = stateChartRuntime();
 
         return {

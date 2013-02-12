@@ -1,10 +1,8 @@
 ﻿/*global define,setTimeout,clearTimeout*/
 define([
-    'scalejs!core',
-    './statechart'
+    'scalejs!core'
 ], function (
-    core,
-    createStatechart
+    core
 ) {
     'use strict';
 
@@ -169,7 +167,7 @@ define([
     function parallel(id) {
         return withState.apply(null, [{id: id, parallel: true}].concat(Array.prototype.slice.call(arguments, 1)));
     }
-
+    /*
     function statechart() {
         var spec,
             b,
@@ -180,10 +178,10 @@ define([
         sc = createStatechart(spec);
 
         return sc;
-    }
+    }*/
 
     return {
-        statechart: statechart,
+        //statechart: statechart,
         state: state,
         parallel: parallel
     };

@@ -12,26 +12,17 @@ define([
         has = core.object.has,
         array = core.array,
         log = core.log.debug,
-        merge = core.object.merge;
+        merge = core.object.merge,
+        clone = core.object.clone;
 
     return function runtime() {
-        var datamodel = {};
+        var datamodel = {},
+            currentSmallStepSnapshot = {};
 
         function createActionContext(eventsToAddToInnerQueue) {
-            /*
-            function get(key) {
-                return datamodelForNextStep.hasOwnProperty(key)
-                        ? datamodelForNextStep[key]
-                        : datamodel[key];
-            }
-
-            function set(key, value) {
-                datamodelForNextStep[key] = value;
-            }*/
-
             function raiseEvent(event) {
                 // if eventsToAddToInnerQueue is not defined it means raiseEvent is called
-                // from transitionEvaluator. This is now allowed. 
+                // from transitionEvaluator. This is not allowed. 
                 if (!has(eventsToAddToInnerQueue)) {
                     throw {
                         name: 'Illegal Operation',
@@ -41,26 +32,33 @@ define([
                 array.addOne(eventsToAddToInnerQueue, event);
             }
 
-            return merge(datamodel, { raise: eventRaiser(raiseEvent) });
+            // The default context (e.g. `this`) is current small step snapshot (e.g. non-commited data).
+            // If action needs access to big step data (e.g. commited data) it should do via bigstep property.
+            return merge(currentSmallStepSnapshot, {
+                bigstep: clone(datamodel),
+                raise: eventRaiser(raiseEvent)
+            });
         }
 
-        function runAction(action, eventSet, datamodelForNextStep, eventsToAddToInnerQueue) {
+        function runAction(action, eventSet, eventsToAddToInnerQueue) {
             log('Running action ' + action.name);
 
             var actionContext = createActionContext(eventsToAddToInnerQueue),
-                result = action.call(actionContext, datamodelForNextStep, eventSet);
+                result = action.call(actionContext, eventSet);
 
             delete actionContext.raise;
+            delete actionContext.bigstep;
 
-            datamodel = actionContext;
+            currentSmallStepSnapshot = actionContext;
+            //datamodel = actionContext;
 
             log('Finished action ' + action.name);
 
             return result;
         }
 
-        function transitionConditionEvaluator(eventSet, datamodelForNextStep) {
-            var actionContext = createActionContext(datamodelForNextStep);
+        function transitionConditionEvaluator(eventSet) {
+            var actionContext = createActionContext();
 
             return function (transition) {
                 if (transition.condition) {
@@ -69,19 +67,19 @@ define([
             };
         }
 
-        function commit(datamodelForNextStep) {
-            var key;
-            for (key in datamodelForNextStep) {
-                if (datamodelForNextStep.hasOwnProperty(key)) {
-                    datamodel[key] = datamodelForNextStep[key];
-                }
-            }
+        function beginSmallStep() {
+            currentSmallStepSnapshot = clone(datamodel);
+        }
+
+        function endSmallStep() {
+            datamodel = currentSmallStepSnapshot;
         }
 
         return {
+            beginSmallStep: beginSmallStep,
+            endSmallStep: endSmallStep,
             runAction: runAction,
-            transitionConditionEvaluator: transitionConditionEvaluator,
-            commit: commit
+            transitionConditionEvaluator: transitionConditionEvaluator
         };
     };
 });

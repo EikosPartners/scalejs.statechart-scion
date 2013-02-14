@@ -32,7 +32,7 @@ define([
             innerEventQueue = [],
             isInFinalState = false,
             listeners = [],
-            printTrace = true,
+            printTrace = false,
             logStatesEnteredAndExited = false,
             isStepping = false,
             root;
@@ -224,7 +224,7 @@ define([
             });
 
             //loop and add states until there are no more to add (we reach a stable state)
-            while ((s = statesToProcess.pop()) !== undefined) {
+            while ((s = statesToProcess.shift()) !== undefined) {
                 processState(s);
             }
 
@@ -349,7 +349,7 @@ define([
                 }
 
                 array.iter(statesEntered, function (state) {
-                    if (printTrace || this.opts.logStatesEnteredAndExited) {
+                    if (printTrace || logStatesEnteredAndExited) {
                         log("entering", state.id);
                     }
 

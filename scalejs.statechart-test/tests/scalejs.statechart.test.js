@@ -5,7 +5,7 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart.statechart;
+    var statechart = core.state.statechart;
 
     describe('statechart extension', function () {
         it('is defined', function () {

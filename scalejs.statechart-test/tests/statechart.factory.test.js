@@ -5,7 +5,7 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart.statechart,
+    var statechart = core.state.statechart,
         enumerable = core.linq.enumerable;
 
     describe('factory', function () {

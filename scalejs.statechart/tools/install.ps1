@@ -6,7 +6,7 @@ $project |
 	}" |
 	Add-Shims "{
 			'scalejs.statechart' : {
-				deps : ['scalejs.linq']
+				deps : ['scalejs.linq-linqjs']
 			}
 		}" |
 	Add-ScalejsExtension 'scalejs.statechart' |

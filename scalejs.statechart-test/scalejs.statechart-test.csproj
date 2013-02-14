@@ -14,17 +14,19 @@
   <ItemGroup>
     <Content Include="bootstrapper.js" />
     <Content Include="index.html" />
+    <Content Include="Scripts\es5-shim.js" />
+    <Content Include="Scripts\es5-shim.min.js" />
     <Content Include="Scripts\jasmine.js" />
     <Content Include="Scripts\linq-vsdoc.js" />
     <Content Include="Scripts\linq.js" />
     <Content Include="Scripts\linq.min.js" />
     <Content Include="Scripts\require.js" />
-    <Content Include="Scripts\scalejs-0.2.4.js" />
-    <Content Include="Scripts\scalejs-0.2.4.min.js" />
+    <Content Include="Scripts\scalejs-0.2.6.js" />
+    <Content Include="Scripts\scalejs-0.2.6.min.js" />
     <Content Include="Scripts\scalejs.linq-0.2.0.js" />
     <Content Include="Scripts\scalejs.linq-0.2.0.min.js" />
-    <Content Include="Scripts\scalejs.statechart-0.2.0.js" />
-    <Content Include="Scripts\scalejs.statechart-0.2.0.min.js" />
+    <Content Include="Scripts\scalejs.statechart-0.2.2.js" />
+    <Content Include="Scripts\scalejs.statechart-0.2.2.min.js" />
     <Content Include="tests\all.tests.js" />
     <Content Include="tests\statechart.more-parallel.test.js" />
     <Content Include="tests\statechart.builder.test.js" />

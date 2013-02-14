@@ -5,9 +5,9 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.statechart.statechart,
-        state = core.statechart.builder.state,
-        parallel = core.statechart.builder.parallel;
+    var statechart = core.state.statechart,
+        state = core.state.builder.state,
+        parallel = core.state.builder.parallel;
 
     describe('statechart `set` current small step', function () {
         it('0', function () {

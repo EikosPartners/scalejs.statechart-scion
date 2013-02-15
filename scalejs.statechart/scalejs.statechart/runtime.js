@@ -10,12 +10,13 @@ define([
 
     var // imports
         has = core.object.has,
+        get = core.object.get,
         array = core.array,
         log = core.log.debug,
         merge = core.object.merge,
         clone = core.object.clone;
 
-    return function runtime() {
+    return function runtime(opts) {
         var datamodel = {},
             currentSmallStepSnapshot = {};
 
@@ -40,8 +41,10 @@ define([
             });
         }
 
-        function runAction(action, eventSet, eventsToAddToInnerQueue) {
-            log('Running action ' + action.name);
+        function runAction(stateId, actionName, action, eventSet, eventsToAddToInnerQueue) {
+            if (get(opts, 'printTrace')) {
+                log('Running action ' + stateId + '.' + actionName);
+            }
 
             var actionContext = createActionContext(eventsToAddToInnerQueue),
                 result = action.call(actionContext, eventSet);
@@ -52,7 +55,9 @@ define([
             currentSmallStepSnapshot = actionContext;
             //datamodel = actionContext;
 
-            log('Finished action ' + action.name);
+            if (get(opts, 'printTrace')) {
+                log('Finished action ' + stateId + '.' + actionName);
+            }
 
             return result;
         }

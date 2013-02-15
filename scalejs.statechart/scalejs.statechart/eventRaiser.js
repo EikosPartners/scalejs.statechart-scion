@@ -8,10 +8,11 @@ define([
 
     var // imports
         has = core.object.has,
+        get = core.object.get,
         is = core.type.is,
         log = core.log.debug;
 
-    return function eventRaiser(raiseEvent) {
+    return function eventRaiser(raiseEvent, opts) {
         function create(eventName, data) {
             if (!is(eventName, 'string')) {
                 throw {
@@ -26,9 +27,11 @@ define([
         function doRaise(eventName, data, delay, raiser) {
             var event = create(eventName, data);
 
-            log('raising event ' + event.name + ' with content', event.data, 'after delay ', delay);
+            if (get(opts, 'printTrace')) {
+                log('raising event ' + event.name + ' with content', event.data, 'after delay ', delay);
+            }
 
-            if (has(delay) && delay > 0) {
+            if (has(delay)) {
                 setTimeout(function () {
                     raiser(event);
                 }, delay);

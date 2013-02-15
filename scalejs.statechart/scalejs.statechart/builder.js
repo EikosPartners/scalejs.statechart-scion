@@ -121,13 +121,17 @@ define([
             throw new Error('`on` parameters should be either an event name or condition function or both.');
         }
 
+        function toSpec() {
+            return state;
+        }
+
         builder = {
             isBuilder: true,
             onEntry: onEntry,
             onExit: onExit,
             on: on,
             goto: goto,
-            state: state
+            toSpec: toSpec
         };
 
         return builder;
@@ -151,8 +155,8 @@ define([
             }
 
             if (arguments.length > builderArgsStart) {
-                s.states = array.map(Array.prototype.slice.call(arguments, builderArgsStart), function (sb) {
-                    return sb.state;
+                s.states = array.toArray(arguments).slice(builderArgsStart).map(function (sb) {
+                    return sb.toSpec();
                 });
             }
         }
@@ -161,27 +165,24 @@ define([
     }
 
     function state(id) {
-        return withState.apply(null, [{id: id}].concat(Array.prototype.slice.call(arguments, 1)));
+        // if first argument is a string then it's an id
+        if (is(id, 'string')) {
+            return withState.apply(null, [{id: id}].concat(array.toArray(arguments, 1)));
+        }
+        // otherwise it's a builder (e.g. state being created doesn't have an id)
+        return withState.apply(null, [{}].concat(array.toArray(arguments)));
     }
 
     function parallel(id) {
-        return withState.apply(null, [{id: id, parallel: true}].concat(Array.prototype.slice.call(arguments, 1)));
+        // if first argument is a string then it's an id
+        if (is(id, 'string')) {
+            return withState.apply(null, [{id: id, parallel: true}].concat(array.toArray(arguments, 1)));
+        }
+        // otherwise it's a builder (e.g. state being created doesn't have an id)
+        return withState.apply(null, [{parallel: true}].concat(array.toArray(arguments)));
     }
-    /*
-    function statechart() {
-        var spec,
-            b,
-            sc;
-
-        b = withState.apply(null, [{id: 'root'}].concat(Array.prototype.slice.call(arguments, 0)));
-        spec = b.state;
-        sc = createStatechart(spec);
-
-        return sc;
-    }*/
 
     return {
-        //statechart: statechart,
         state: state,
         parallel: parallel
     };

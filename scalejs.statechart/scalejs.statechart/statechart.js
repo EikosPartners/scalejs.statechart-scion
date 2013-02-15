@@ -129,15 +129,15 @@ define([
                 basicStatesExited = [],
                 sortedStatesExited = [];
 
-            array.iter(transitions, function (transition) {
+            transitions.forEach(function (transition) {
                 var lca = transition.lca,
                     desc = lca.descendants;
 
-                array.iter(configuration, function (state) {
+                configuration.forEach(function (state) {
                     if (desc.indexOf(state) > -1) {
                         array.addOne(basicStatesExited, state);
                         array.addOne(statesExited, state);
-                        array.iter(model.getAncestors(state, lca), function (anc) {
+                        model.getAncestors(state, lca).forEach(function (anc) {
                             array.addOne(statesExited, anc);
                         });
                     }
@@ -170,7 +170,7 @@ define([
                 var lca = model.getLCA(source, target),
                     ancestors = model.getAncestors(target, lca);
 
-                array.iter(ancestors, function (s) {
+                ancestors.forEach(function (s) {
                     if (s.kind === stateKinds.COMPOSITE) {
                         //just add him to statesToEnter, and declare him processed
                         //this is to prevent adding his initial state later on
@@ -185,7 +185,7 @@ define([
             };
 
             processState = function (s) {
-                if (array.indexOf(statesProcessed, s) > -1) {
+                if (statesProcessed.indexOf(s) > -1) {
                     return;
                 }
 
@@ -217,8 +217,8 @@ define([
             };
 
             //do the initial setup
-            array.iter(transitions, function (transition) {
-                array.iter(transition.targets, function (target) {
+            transitions.forEach(function (transition) {
+                transition.targets.forEach(function (target) {
                     processTransitionSourceAndTarget(transition.source, target);
                 });
             });
@@ -288,20 +288,20 @@ define([
                     log("executing state exit actions");
                 }
 
-                array.iter(statesExited, function (state) {
+                statesExited.forEach(function (state) {
                     if (printTrace || logStatesEnteredAndExited) {
                         log("exiting ", state.id);
                     }
 
                     //invoke listeners
-                    array.iter(listeners, function (l) {
+                    listeners.forEach(function (l) {
                         if (l.onExit) {
                             l.onExit(state.id);
                         }
                     });
 
                     if (state.onExit !== undefined) {
-                        runtime.runAction(state.onExit, eventSet, eventsToAddToInnerQueue);
+                        runtime.runAction(state.id, 'onExit', state.onExit, eventSet, eventsToAddToInnerQueue);
                     }
 
                     var f;
@@ -330,17 +330,17 @@ define([
                 }
 
 
-                array.iter(sortedTransitions, function (transition) {
+                sortedTransitions.forEach(function (transition) {
                     var targetIds = enumerable.from(transition.targets).select('$.id').toArray();
 
-                    array.iter(listeners, function (l) {
+                    listeners.forEach(function (l) {
                         if (l.onTransition) {
                             l.onTransition(transition.source.id, targetIds);
                         }
                     });
 
                     if (transition.action) {
-                        runtime.runAction(transition.action, eventSet, eventsToAddToInnerQueue);
+                        runtime.runAction(transition.source.id, 'action', transition.action, eventSet, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -348,19 +348,19 @@ define([
                     log("executing state enter actions");
                 }
 
-                array.iter(statesEntered, function (state) {
+                statesEntered.forEach(function (state) {
                     if (printTrace || logStatesEnteredAndExited) {
                         log("entering", state.id);
                     }
 
-                    array.iter(listeners, function (l) {
+                    listeners.forEach(function (l) {
                         if (l.onEntry) {
                             l.onEntry(state.id);
                         }
                     });
 
                     if (state.onEntry) {
-                        runtime.runAction(state.onEntry, eventSet, eventsToAddToInnerQueue);
+                        runtime.runAction(state.id, 'onEntry', state.onEntry, eventSet, eventsToAddToInnerQueue);
                     }
                 });
 
@@ -477,7 +477,7 @@ define([
         root = factory.create.apply(null, arguments);
 
         configuration.push(root.initial || root);
-        runtime = stateChartRuntime();
+        runtime = stateChartRuntime({printTrace: printTrace});
 
         return {
             factory: factory,

@@ -12,9 +12,7 @@ define([
 ) {
     'use strict';
 
-    var // imports
-        has = core.object.has,
-        array = core.array;
+    var has = core.object.has;
 
     return function factory() {
         var context,
@@ -26,24 +24,24 @@ define([
         }
 
         function resolveStates() {
-            array.iter(context.states, function (s) {
+            context.states.forEach(function (s) {
                 s.ancestorIds.reverse();
                 s.descendantIds.reverse();
                 // resolve states
                 s.initial = stateById(s.initialId);
                 s.history = stateById(s.history);
-                s.children = array.map(s.childrenIds, stateById);
+                s.children = s.childrenIds.map(stateById);
                 s.parent = stateById(s.parentId);
-                s.ancestors = array.map(s.ancestorIds, stateById);
-                s.descendants = array.map(s.descendantIds, stateById);
-                s.transitions = array.map(s.transitionIds, function (t) { return context.transitions[t]; });
+                s.ancestors = s.ancestorIds.map(stateById);
+                s.descendants = s.descendantIds.map(stateById);
+                s.transitions = s.transitionIds.map(function (t) { return context.transitions[t]; });
             });
         }
 
         function resolveTransitions() {
-            array.iter(context.transitions, function (t) {
+            context.transitions.forEach(function (t) {
                 t.source = stateById(t.source);
-                t.targets = array.map(t.targets, function (targetId) {
+                t.targets = t.targets.map(function (targetId) {
                     var target = stateById(targetId);
                     if (!has(target)) {
                         throw new Error('Transition targets state "' + targetId + '" but such state doesn\'t exist.');

@@ -109,7 +109,7 @@ define([
             }
 
             var nextAncestorIds = ancestorIds.concat(self.id),
-                stateIds = array.map(spec.states, function (child) {
+                stateIds = spec.states.map(function (child) {
                     var st = state(child, nextAncestorIds, context);
                     return st.id;
                 });
@@ -175,7 +175,7 @@ define([
         }
 
         function descendants() {
-            array.iter(ancestorIds, function (ancestor) {
+            ancestorIds.forEach(function (ancestor) {
                 context.idToStateMap[ancestor].descendantIds.push(self.id);
             });
         }

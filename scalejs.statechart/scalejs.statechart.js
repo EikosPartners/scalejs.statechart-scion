@@ -12,7 +12,9 @@ define([
 
     var enumerable = core.linq.enumerable,
         has = core.object.has,
-        applicationStateSpec = {id: 'root'},
+        state = builder.state,
+        parallel = builder.parallel,
+        applicationStatechartSpec,
         applicationStatechart;
 
     function findState(state, stateId) {
@@ -34,22 +36,24 @@ define([
 
 
     function registerState(parentStateId, stateBuilder) {
-        /*if (applicationStatechart.isStarted()) {
+        if (core.isApplicationStarted()) {
             throw new Error('Can\'t add new state to application that is already running.');
-        }*/
+        }
 
-        var state = stateBuilder.state,
+        var state = stateBuilder.toSpec(),
             parent,
             existing;
 
-        parent = findState(applicationStateSpec, parentStateId);
+        parent = findState(applicationStatechartSpec, parentStateId);
         if (!parent) {
             throw new Error('Parent state "' + parentStateId + '" doesn\'t exist');
         }
 
-        existing = findState(applicationStateSpec, state);
-        if (existing) {
-            throw new Error('State "' + state.id + '" already exists.');
+        if (has(state, 'id')) {
+            existing = findState(applicationStatechartSpec, state.id);
+            if (existing) {
+                throw new Error('State "' + state.id + '" already exists.');
+            }
         }
 
         if (!has(parent, 'states')) {
@@ -62,8 +66,10 @@ define([
         applicationStatechart.raise(eventName, eventData, delay);
     }
 
+    applicationStatechartSpec = state('scalejs', parallel('root')).toSpec();
+
     core.onApplicationStarted(function () {
-        applicationStatechart = statechart(applicationStateSpec);
+        applicationStatechart = statechart(applicationStatechartSpec);
         applicationStatechart.start();
     });
 

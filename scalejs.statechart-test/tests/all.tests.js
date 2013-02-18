@@ -1,11 +1,28 @@
 /*global define*/
 define([
     'require',
-    'jasmine-html'
+    'scalejs!application',
+    './scalejs.statechart.test',
+    './statechart.factory.test',
+    './statechart.builder.test',
+    './statechart.spotchecks.test',
+    './statechart.initial.test',
+    './statechart.basic.test',
+    './statechart.order.test',
+    './statechart.hierarchy.test',
+    './statechart.hierarchy.and.order.test',
+    './statechart.parallel.test',
+    './statechart.more-parallel.test',
+    './statechart.action.raise.test',
+    './scalejs.statechart.set.current.small.step.test',
+    './scalejs.statechart.set.next.small.step.test'
     //'./statechart.test'
-], function (require, jasmine) {
+], function (require) {
     'use strict';
+    /*require(['jasmine-html'], function () {
+    });*/
 
+    /*
     var jasmineEnv = jasmine.getEnv(),
         htmlReporter = new jasmine.HtmlReporter();
 
@@ -16,22 +33,5 @@ define([
         return htmlReporter.specFilter(spec);
     };
 
-    require([
-        './scalejs.statechart.test',
-        './statechart.factory.test',
-        './statechart.builder.test',
-        './statechart.spotchecks.test',
-        './statechart.initial.test',
-        './statechart.basic.test',
-        './statechart.order.test',
-        './statechart.hierarchy.test',
-        './statechart.hierarchy.and.order.test',
-        './statechart.parallel.test',
-        './statechart.more-parallel.test',
-        './statechart.action.raise.test',
-        './scalejs.statechart.set.current.small.step.test',
-        './scalejs.statechart.set.next.small.step.test'
-    ], function () {
-        jasmineEnv.execute();
-    });
+    jasmineEnv.execute();*/
 });

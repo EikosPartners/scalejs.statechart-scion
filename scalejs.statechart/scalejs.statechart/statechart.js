@@ -477,7 +477,10 @@ define([
         root = factory.create.apply(null, arguments);
 
         configuration.push(root.initial || root);
-        runtime = stateChartRuntime({printTrace: printTrace});
+        runtime = stateChartRuntime({
+            printTrace: printTrace,
+            getFullConfiguration: getFullConfiguration
+        });
 
         return {
             factory: factory,

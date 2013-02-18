@@ -33,11 +33,19 @@ define([
                 array.addOne(eventsToAddToInnerQueue, event);
             }
 
+            function inAny() {
+                var states =  Array.prototype.slice.call(arguments, 0);
+                return opts.getFullConfiguration().some(function (c) {
+                    return states.some(function (s) { return s === c; });
+                });
+            }
+
             // The default context (e.g. `this`) is current small step snapshot (e.g. non-commited data).
             // If action needs access to big step data (e.g. commited data) it should do via bigstep property.
             return merge(currentSmallStepSnapshot, {
                 bigstep: clone(datamodel),
-                raise: eventRaiser(raiseEvent)
+                raise: eventRaiser(raiseEvent),
+                inState: inAny
             });
         }
 

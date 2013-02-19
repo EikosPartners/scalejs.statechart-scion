@@ -62,7 +62,7 @@ define([
 
             var scb = builder.state.apply(null, ['root'].concat(Array.prototype.slice.call(arguments, 0)));
 
-            return scb.state;
+            return scb.toSpec();
         }
 
         function create() {

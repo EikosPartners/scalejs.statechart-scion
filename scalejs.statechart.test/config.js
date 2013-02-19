@@ -7,7 +7,7 @@ var require = {
         "linqjs":  "Scripts/linq.min",
         "scalejs":  "Scripts/scalejs-0.2.6.1",
         "scalejs.linq-linqjs":  "Scripts/scalejs.linq-linqjs-3.0.3",
-        "scalejs.statechart":  "Scripts/scalejs.statechart-0.2.0.1"
+        "scalejs.statechart":  "Scripts/scalejs.statechart-0.2.1"
     },
     "scalejs":  {
         "extensions":  [

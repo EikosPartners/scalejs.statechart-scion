@@ -28,6 +28,8 @@
     <Content Include="Scripts\scalejs-0.2.6.1.min.js" />
     <Content Include="Scripts\scalejs.linq-linqjs-3.0.3.js" />
     <Content Include="Scripts\scalejs.linq-linqjs-3.0.3.min.js" />
+    <Content Include="Scripts\scalejs.statechart-0.2.1.js" />
+    <Content Include="Scripts\scalejs.statechart-0.2.1.min.js" />
     <Content Include="test\all.tests.js" />
     <Content Include="test\scalejs.statechart.set.current.small.step.test.js" />
     <Content Include="test\scalejs.statechart.set.next.small.step.test.js" />

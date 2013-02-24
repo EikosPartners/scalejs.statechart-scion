@@ -1,0 +1,8 @@
+﻿({
+	mainConfigFile: '../config.js',
+    include: 'scalejs.statechart-scion',
+    exclude: [
+        'scalejs!core',
+		'scion'
+    ]
+})

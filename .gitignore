@@ -9,3 +9,9 @@
 /scalejs.statechart-test/obj
 /scalejs.statechart-test/scalejs.statechart-test.csproj.user
 /.nuget/nuget.exe
+*.suo
+/scalejs.statechart-scion/build
+/scalejs.statechart-scion/obj
+/scalejs.statechart-scion/scalejs.statechart-scion.csproj.user
+/scalejs.statechart-scion.test/build
+/scalejs.statechart-scion.test/scalejs.statechart-scion.test.csproj.user

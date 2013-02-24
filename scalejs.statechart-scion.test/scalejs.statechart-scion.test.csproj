@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{7D9BBE50-A33C-4A0C-B660-9512BDCC9951}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <OutputPath>build</OutputPath>
+    <JSLintSkip>\Scripts\</JSLintSkip>
+    <RestorePackages>true</RestorePackages>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>scalejs.ajax.test</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="config.js" />
+    <Content Include="css\jasmine.css" />
+    <Content Include="index.test.html" />
+    <Content Include="Scripts\es5-shim.js" />
+    <Content Include="Scripts\es5-shim.min.js" />
+    <Content Include="Scripts\jasmine-html.js" />
+    <Content Include="Scripts\jasmine.js" />
+    <Content Include="Scripts\json2.js" />
+    <Content Include="Scripts\json2.min.js" />
+    <Content Include="Scripts\linq-vsdoc.js" />
+    <Content Include="Scripts\linq.js" />
+    <Content Include="Scripts\linq.js.d.ts" />
+    <Content Include="Scripts\linq.min.js" />
+    <Content Include="Scripts\require.js" />
+    <Content Include="Scripts\scalejs-0.2.7.3.js" />
+    <Content Include="Scripts\scalejs-0.2.7.3.min.js" />
+    <Content Include="Scripts\scalejs.linq-linqjs-3.0.3.js" />
+    <Content Include="Scripts\scalejs.linq-linqjs-3.0.3.min.js" />
+    <Content Include="Scripts\scalejs.statechart-scion-0.2.1.9.js" />
+    <Content Include="test\all.tests.js" />
+    <Content Include="test\assign-current-small-step.test.js" />
+    <Content Include="test\basic.test.js" />
+    <Content Include="test\builder.test.js" />
+    <Content Include="test\raise-outer.test.js" />
+    <Content Include="test\hierarchy-order.test.js" />
+    <Content Include="test\hierarchy.test.js" />
+    <Content Include="test\more-parallel.test.js" />
+    <Content Include="test\onExit.test.js" />
+    <Content Include="test\order.test.js" />
+    <Content Include="test\parallel.test.js" />
+    <Content Include="test\raise-inner.test.js" />
+    <Content Include="test\scalejs.state.test.js" />
+    <Content Include="test\initial.test.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ScalejsProjectType>Test</ScalejsProjectType>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\nuget.targets" />
+  <Import Project="$(SolutionDir)\.scalejs\Scalejs.targets" />
+</Project>

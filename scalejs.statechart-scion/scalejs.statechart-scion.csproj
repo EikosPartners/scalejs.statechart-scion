@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectGuid>{CBB3D24D-A50D-45B2-9F11-0907BF96DF42}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <OutputPath>build</OutputPath>
+    <JSLintSkip>\Scripts\</JSLintSkip>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Properties\build.rjs" />
+    <Content Include="Properties\scalejs.statechart-scion.nuspec" />
+    <Content Include="scalejs.statechart-scion.js" />
+    <Content Include="scalejs.statechart-scion\state.builder.js" />
+    <Content Include="scalejs.statechart-scion\state.js" />
+    <Content Include="Scripts\scalejs-0.2.4.js" />
+    <Content Include="Scripts\scalejs-0.2.4.min.js" />
+    <Content Include="Scripts\scion.js" />
+    <Content Include="tools\install.ps1" />
+    <Content Include="tools\uninstall.ps1" />
+    <Content Include="config.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ScalejsProjectType>Extension</ScalejsProjectType>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>scalejs.statechart-scion</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" />
+  <Import Project="$(SolutionDir)\.scalejs\Scalejs.targets" />
+</Project>

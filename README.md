@@ -1,4 +1,4 @@
-scalejs.statechart
+scalejs.statechart-scion
 ==================
 
 Statechart extension for scalable JavaScript application. 

@@ -12,7 +12,7 @@ define([
     './parallel.test',
     './more-parallel.test',
     './assign-current-small-step.test',
-    //'./onExit.test' 
+    './onEntry.test'
 ], function () {
     'use strict';
 

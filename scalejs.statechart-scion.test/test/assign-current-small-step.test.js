@@ -118,5 +118,18 @@ define([
             sc.send('t');
             expect(sc.getConfiguration()).toEqual(['c']);
         });
+
+        it('when data is changed then the condition condition still gets triggered', function () {
+            var sc = statechart(
+                parallel('p',
+                    state('a').onEntry(function () { this.x = 'foo'; }),
+                    state('b').on(function () { return this.x === 'foo' && this.y === 'bar'; }).goto('d'),
+                    state('c').onEntry(function () { this.y = 'bar'; })),
+                state('d')
+            );
+
+            sc.start();
+            expect(sc.getConfiguration()).toEqual(['d']);
+        });
     });
 });

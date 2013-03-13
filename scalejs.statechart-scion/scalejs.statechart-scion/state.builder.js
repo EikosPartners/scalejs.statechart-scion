@@ -8,10 +8,10 @@ define([
 ) {
     'use strict';
 
-    var toArray = core.array.toArray,
-        defaultBuilder;
+    return function (config) {
+        var toArray = core.array.toArray,
+            merge = core.object.merge;
 
-    function builder(options) {
         function stateBuilder(state) {
             var builder;
 
@@ -193,30 +193,27 @@ define([
             return withState.apply(null, [{parallel: true}].concat(toArray(arguments)));
         }
 
-        function statechart() {
-            var builder = state.apply(null, arguments);
+        function builder(options) {
+            return function statechart() {
+                var builder = state.apply(null, arguments);
 
-            //console.log(JSON.stringify(builder.toSpec()));
+                //console.log(JSON.stringify(builder.toSpec()));
 
-            return new scion.Statechart(builder.toSpec(), options);
+                return new scion.Statechart(builder.toSpec(), merge({
+                    log: core.log.debug
+                }, options));
+            };
         }
 
         return {
+            builder: builder,
             state: state,
             parallel: parallel,
-            statechart: statechart
+            statechart: builder({
+                logStatesEnteredAndExited: config.logStatesEnteredAndExited,
+                log: core.log.debug
+            })
         };
-    }
-
-    defaultBuilder = builder({
-        logStatesEnteredAndExited: false
-    });
-
-    return {
-        builder: builder,
-        state: defaultBuilder.state,
-        parallel: defaultBuilder.parallel,
-        statechart: defaultBuilder.statechart
     };
 });
 

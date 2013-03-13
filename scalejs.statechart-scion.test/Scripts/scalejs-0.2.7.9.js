@@ -3,13 +3,6 @@
 define('scalejs',['es5-shim', 'json2'], function () {
     
 
-    var windowType = typeof (window);
-
-    // IE weirdness. 
-    if (windowType !== 'undefined' && window.console === 'undefined') {
-        window.console = window.Console;
-    }
-
     return {
         load: function (name, req, load, config) {
             var extensionNames = config.scalejs ? config.scalejs.extensions || [] : [],
@@ -382,7 +375,7 @@ define('scalejs/base.array',[
         /// <returns type="">New array containing the specified items.</returns>
         first = valueOrDefault(first, 0);
         count = valueOrDefault(count, array.length);
-        return array.slice(first, count);
+        return Array.prototype.slice.call(array, first, count);
     }
 
     function find(array, f, context) {
@@ -397,7 +390,17 @@ define('scalejs/base.array',[
     }
 
     function toArray(list, start, end) {
-        return Array.prototype.slice.call(list, start, end);
+        /*ignore jslint start*/
+        var array = [],
+            i,
+            result;
+
+        for (i = list.length; i--; array[i] = list[i]) {}
+        
+        result = copy(array, start, end);
+
+        return result;
+        /*ignore jslint end*/
     }
 
     return {
@@ -410,67 +413,48 @@ define('scalejs/base.array',[
     };
 });
 
-/*global define,window,document*/
+/*global define,window,document,console*/
 define('scalejs/base.log',[
-    './base.object'
 ], function (
-    object
 ) {
     
 
-    var has = object.has;
+    var logMethods = ['log', 'info', 'warn', 'error'],
+        self = {};
 
-    function formatException(ex) {
-        var stack = has(ex, 'stack') ? String(ex.stack) : '',
-            message = has(ex, 'message') ? ex.message : '';
+    // Workaround for IE8 and IE9 - in these browsers console.log exists but it's not a real JS function.
+    // See http://stackoverflow.com/a/5539378/201958 for more details
+
+    if (window.console !== undefined) {
+        if (typeof console.log === "object") {
+            logMethods.forEach(function (method) {
+                self[method] = this.bind(console[method], console);
+            }, Function.prototype.call);
+        } else {
+            logMethods.forEach(function (method) {
+                self[method] = console[method].bind(console);
+            });
+        }
+
+        if (typeof console.debug === 'function') {
+            self.debug = console.debug.bind(console);
+        } else {
+            self.debug = self.info;
+        }
+    } else {
+        logMethods.forEach(function (method) {
+            self[method] = function () {};
+        });
+        logMethods.debug = function () {};
+    }
+
+    self.formatException = function (ex) {
+        var stack = ex.stack ? String(ex.stack) : '',
+            message = ex.message || '';
         return 'Error: ' + message + '\nStack: ' + stack;
-    }
-
-    function info() {
-        if (has(window, 'console', 'info')) {
-            if (!has(window, 'console', 'info', 'apply')) {
-                // IE8
-                window.console.info(Array.prototype.join.call(arguments));
-            } else {
-                window.console.info.apply(window.console, arguments);
-            }
-        }
-    }
-
-    function warn() {
-        if (has(window, 'console', 'warn')) {
-            window.console.warn.apply(window.console, arguments);
-            return;
-        }
-
-        info(arguments);
-    }
-
-    function error() {
-        if (has(window, 'console', 'error')) {
-            window.console.error.apply(window.console, arguments);
-            return;
-        }
-
-        info(arguments);
-    }
-
-    function debug() {
-        if (has(window, 'console', 'debug')) {
-            window.console.debug.apply(window.console, arguments);
-            return;
-        }
-
-        info(arguments);
-    }
-
-    return {
-        info: info,
-        warn: warn,
-        debug: debug,
-        error: error,
-        formatException: formatException
     };
+
+    return self;
 });
 
 /*global define,console,document*/
@@ -832,7 +816,7 @@ define('scalejs/application',[
         // Dynamic module loading is no longer supported for simplicity.
         // Module is free to load any of its resources dynamically.
         // Or an extension can provide dynamic module loading capabilities as needed.
-        if (core.isApplicationStarted()) {
+        if (core.isApplicationRunning()) {
             moduleNames = toArray(arguments).reduce(function (ns, m) { return ns + ',' + m; });
             throw new Error('Can\'t register module "' + moduleNames + '" since the application is already running.',
                             'Dynamic module loading is not supported.');

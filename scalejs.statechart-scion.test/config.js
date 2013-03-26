@@ -6,9 +6,9 @@ var require = {
         "jasmine-html":  "Scripts/jasmine-html",
         "json2":  "Scripts/json2",
         "linqjs":  "Scripts/linq.min",
-        "scalejs":  "Scripts/scalejs-0.2.7.9",
+        "scalejs":  "Scripts/scalejs-0.2.7.16",
         "scalejs.linq-linqjs":  "Scripts/scalejs.linq-linqjs-3.0.3",
-        "scalejs.statechart-scion":  "Scripts/scalejs.statechart-scion-0.2.1.16",
+        "scalejs.statechart-scion":  "Scripts/scalejs.statechart-scion-0.2.1.23",
         "scion":  "Scripts/scion"
     },
     "scalejs":  {

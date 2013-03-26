@@ -1,4 +1,4 @@
-﻿/*global define,setTimeout,clearTimeout*/
+﻿/*global define,setTimeout,clearTimeout,console*/
 define([
     'scalejs!core',
     'scion'
@@ -9,13 +9,97 @@ define([
     'use strict';
 
     return function (config) {
-        var toArray = core.array.toArray,
-            merge = core.object.merge;
+        var array = core.array,
+            has = core.object.has,
+            merge = core.object.merge,
+            builder = core.functional.builder,
+            stateBuilder,
+            transitionBuilder,
+            state,
+            parallel,
+            transition;
 
-        function stateBuilder(state) {
-            var builder;
+        stateBuilder = builder({
+            run: function (f, opts) {
+                var s = {};
 
-            function onEntry(f) {
+                if (has(opts, 'parallel')) {
+                    s.parallel = opts.parallel;
+                }
+
+                f(s);
+
+                return s;
+            },
+
+            zero: function () {
+                return function () {};
+            },
+
+            combine: function (f, g) {
+                return function (state) {
+                    f(state);
+                    g(state);
+                };
+            },
+
+            missing: function (expr) {
+                if (typeof expr === 'string') {
+                    return function (state) {
+                        if (state.id) {
+                            throw new Error('Can\'t set state id to "' + expr + '". ' +
+                                            'state\'s id is already set to "' + state.id + '"');
+                        }
+                        state.id = expr;
+                    };
+                }
+
+                if (typeof expr === 'function') {
+                    return expr;
+                }
+
+                if (expr.id) {
+                    return function (state) {
+                        if (!state.states) {
+                            state.states = [];
+                        }
+                        state.states.push(expr);
+                    };
+                }
+
+                throw new Error('Missing builder for expression', expr);
+            }
+        });
+
+        state = stateBuilder();
+        parallel = stateBuilder({ parallel: true });
+
+        transitionBuilder = builder({
+            run: function (f) {
+                return function (state) {
+                    if (!state.transitions) {
+                        state.transitions = [];
+                    }
+
+                    var t = {};
+                    f(t);
+
+                    state.transitions.push(t);
+                };
+            },
+
+            combine: function (f, g) {
+                return function (transition) {
+                    f(transition);
+                    g(transition);
+                };
+            }
+        });
+
+        transition = transitionBuilder();
+
+        function onEntry(f) {
+            return function (state) {
                 if (state.onEntry) {
                     throw new Error('Only one `onEntry` action is allowed.');
                 }
@@ -26,10 +110,12 @@ define([
 
                 state.onEntry = f;
 
-                return builder;
-            }
+                return state;
+            };
+        }
 
-            function onExit(f) {
+        function onExit(f) {
+            return function (state) {
                 if (state.onExit) {
                     throw new Error('Only one `onExit` action is allowed.');
                 }
@@ -40,176 +126,149 @@ define([
 
                 state.onExit = f;
 
-                return builder;
-            }
-
-            function startTransition(isInternal) {
-                var transition = {};
-                if (isInternal) {
-                    transition.type = 'internal';
-                }
-
-                if (!state.transitions) {
-                    state.transitions = [];
-                }
-                state.transitions.push(transition);
-
-                return transition;
-            }
-
-            function transitionGoto(transition, stateOrAction, action) {
-                if (!transition) {
-                    throw new Error('`transition` is undefined.');
-                }
-
-                if (typeof stateOrAction === 'string') {
-                    transition.target = stateOrAction.split(' ');
-                    if (action) {
-                        if (typeof action !== 'function') {
-                            throw new Error('`action` must be an action.');
-                        }
-                        transition.onTransition = action;
-                    }
-
-                    return builder;
-                }
-
-                if (typeof stateOrAction === 'function') {
-                    if (action) {
-                        throw new Error('`goto` parameters should be either target id(s) or action function or both.');
-                    }
-                    transition.onTransition = stateOrAction;
-
-                    return builder;
-                }
-
-                throw new Error('`goto` parameters should be either target id(s) or action function or both.');
-            }
-
-            function goto(stateOrAction, action) {
-                return transitionGoto(startTransition(), stateOrAction, action);
-            }
-
-            function gotoInternally(stateOrAction, action) {
-                return transitionGoto(startTransition(true), stateOrAction, action);
-            }
-
-            function on(eventOrCondition, condition) {
-                var transition = startTransition(),
-                    transitionBuilder = {
-                        doNothing: builder,
-                        goto: function (stateOrAction, action) {
-                            return transitionGoto(transition, stateOrAction, action);
-                        },
-                        gotoInternally: function (stateOrAction, action) {
-                            transition.type = 'internal';
-                            return transitionGoto(transition, stateOrAction, action);
-                        }
-                    };
-
-                if (typeof eventOrCondition === 'string') {
-                    transition.event = eventOrCondition;
-                    if (condition !== undefined) {
-                        if (typeof condition !== 'function') {
-                            throw new Error('`condition` must be a function.');
-                        }
-                        transition.cond = condition;
-                    }
-
-                    return transitionBuilder;
-                }
-
-                if (typeof eventOrCondition === 'function') {
-                    if (condition !== undefined) {
-                        throw new Error('`on` parameters should be either an event name or condition function or both.');
-                    }
-                    transition.cond = eventOrCondition;
-
-                    return transitionBuilder;
-                }
-
-                throw new Error('`on` parameters should be either an event name or condition function or both.');
-            }
-
-            function toSpec() {
                 return state;
-            }
-
-            builder = {
-                isBuilder: true,
-                onEntry: onEntry,
-                onExit: onExit,
-                on: on,
-                goto: goto,
-                gotoInternally: gotoInternally,
-                toSpec: toSpec
             };
-
-            return builder;
         }
 
-        function withState(s, opts) {
-            var builderArgsStart = 1;
+        function event(eventName) {
+            return function (transition) {
+                transition.event = eventName;
+            };
+        }
 
-            if (arguments.length > 1) {
-                if (!opts.isBuilder) {
-                    builderArgsStart = 2;
-                    if (opts.initial) {
-                        if (s.parallel) {
-                            return new Error('`initial` shouldn\'t be specified on parallel region.');
-                        }
-                        s.initial = opts.initial;
-                    }
-                    if (opts.parallel) {
-                        s.parallel = opts.parallel;
-                    }
+        function condition(f) {
+            return function (transition) {
+                transition.cond = f;
+            };
+        }
+
+        function goto(target) {
+            return function (transition) {
+                transition.target = target;
+            };
+        }
+
+        function gotoInternally(target) {
+            return function (transition) {
+                transition.target = target;
+                transition.type = 'internal';
+            };
+        }
+
+        function onTransition(f) {
+            return function (transition) {
+                transition.onTransition = f;
+            };
+        }
+
+        /*jslint unparam: true*/
+        function on() {
+            var args = array.copy(arguments),
+                action = args.pop(),
+                params;
+
+            if (args.length > 2) {
+                throw new Error('First (optional) argument should be event name, ' +
+                                'second (optional) argument should be a condition function');
+            }
+
+            if (!(typeof action === 'function')) {
+                throw new Error('Last argument should be either `goto` or a funciton.');
+            }
+
+            params = args.map(function (a) {
+                if (typeof a === 'string') {
+                    return event(a);
                 }
 
-                if (arguments.length > builderArgsStart) {
-                    s.states = toArray(arguments, builderArgsStart).map(function (sb) {
-                        return sb.toSpec();
+                if (typeof a === 'function') {
+                    return condition(a);
+                }
+
+                throw new Error('Transition argument ', a, ' is not supported. ' +
+                                'First (optional) argument should be event name, ' +
+                                'second (optional) argument should be a condition function');
+            });
+
+            return transition.apply(null, params.concat([onTransition(action)]));
+        }
+
+        function whenInStates() {
+            var args = array.copy(arguments),
+                action = args.pop();
+
+            args.forEach(function (arg) {
+                if (!(typeof arg === 'string')) {
+                    throw new Error('`whenInStates` accepts list of states and either `goto` ' +
+                                    'or a function as the last argument.');
+                }
+            });
+
+            if (!(typeof action === 'function')) {
+                throw new Error('Last argument should be either `goto` or a function.');
+            }
+
+            return transition(
+                condition(function (e, isIn) {
+                    return args.every(function (state) {
+                        return isIn(state);
                     });
+                }),
+                onTransition(action)
+            );
+        }
+
+        function whenNotInStates() {
+            var args = array.copy(arguments),
+                action = args.pop();
+
+            args.forEach(function (arg) {
+                if (!(typeof arg === 'string')) {
+                    throw new Error('`whenNotInStates` accepts list of states and either `goto` ' +
+                                    'or a function as the last argument.');
                 }
+            });
+
+            if (!(typeof action === 'function')) {
+                throw new Error('Last argument should be either `goto` or a function.');
             }
 
-            return stateBuilder(s);
+            return transition(
+                condition(function (e, isIn) {
+                    return args.every(function (state) {
+                        return !isIn(state);
+                    });
+                }),
+                onTransition(action)
+            );
         }
+        /*jslint unparam: false*/
 
-        function state(id) {
-            // if first argument is a string then it's an id
-            if (typeof id === 'string') {
-                return withState.apply(null, [{id: id}].concat(toArray(arguments, 1)));
-            }
-            // otherwise it's a builder (e.g. state being created doesn't have an id)
-            return withState.apply(null, [{}].concat(toArray(arguments, 0)));
-        }
-
-        function parallel(id) {
-            // if first argument is a string then it's an id
-            if (typeof id === 'string') {
-                return withState.apply(null, [{id: id, type: 'parallel'}].concat(toArray(arguments, 1)));
-            }
-            // otherwise it's a builder (e.g. state being created doesn't have an id)
-            return withState.apply(null, [{parallel: true}].concat(toArray(arguments)));
-        }
-
-        function builder(options) {
+        function statechartBuilder(options) {
             return function statechart() {
-                var builder = state.apply(null, arguments);
+                var createSpec = state.apply(null, arguments),
+                    spec = createSpec();
 
-                //console.log(JSON.stringify(builder.toSpec()));
+                console.log(spec);
 
-                return new scion.Statechart(builder.toSpec(), merge({
+                return new scion.Statechart(spec, merge({
                     log: core.log.debug
                 }, options));
             };
         }
 
         return {
-            builder: builder,
+            builder: statechartBuilder,
             state: state,
             parallel: parallel,
-            statechart: builder({
+            onEntry: onEntry,
+            onExit: onExit,
+            on: on,
+            whenInStates: whenInStates,
+            whenNotInStates: whenNotInStates,
+            goto: goto,
+            gotoInternally: gotoInternally,
+            statechart: statechartBuilder({
                 logStatesEnteredAndExited: config.logStatesEnteredAndExited,
                 log: core.log.debug
             })

@@ -1,18 +1,17 @@
-
-/*global define,setTimeout,clearTimeout*/
-define('scalejs.statechart-scion/state.builder',[
+﻿/*global define,setTimeout,clearTimeout*/
+define([
     'scalejs!core',
     'scion'
 ], function (
     core,
     scion
 ) {
-    
+    'use strict';
 
-    var toArray = core.array.toArray,
-        defaultBuilder;
+    return function (config) {
+        var toArray = core.array.toArray,
+            merge = core.object.merge;
 
-    function builder(options) {
         function stateBuilder(state) {
             var builder;
 
@@ -194,157 +193,27 @@ define('scalejs.statechart-scion/state.builder',[
             return withState.apply(null, [{parallel: true}].concat(toArray(arguments)));
         }
 
-        function statechart() {
-            var builder = state.apply(null, arguments);
+        function builder(options) {
+            return function statechart() {
+                var builder = state.apply(null, arguments);
 
-            //console.log(JSON.stringify(builder.toSpec()));
+                //console.log(JSON.stringify(builder.toSpec()));
 
-            return new scion.Statechart(builder.toSpec(), options);
+                return new scion.Statechart(builder.toSpec(), merge({
+                    log: core.log.debug
+                }, options));
+            };
         }
 
         return {
+            builder: builder,
             state: state,
             parallel: parallel,
-            statechart: statechart
+            statechart: builder({
+                logStatesEnteredAndExited: config.logStatesEnteredAndExited,
+                log: core.log.debug
+            })
         };
-    }
-
-    defaultBuilder = builder({
-        logStatesEnteredAndExited: true
-    });
-
-    return {
-        builder: builder,
-        state: defaultBuilder.state,
-        parallel: defaultBuilder.parallel,
-        statechart: defaultBuilder.statechart
     };
 });
-
-
-/*global define*/
-/*jslint nomen:true*/
-define('scalejs.statechart-scion/state',[
-    'scalejs!core',
-    './state.builder'
-], function (
-    core,
-    builder
-) {
-    
-
-    var // imports
-        enumerable = core.linq.enumerable,
-        toArray = core.array.toArray,
-        has = core.object.has,
-        is = core.type.is,
-        curry = core.functional.curry,
-        state = builder.state,
-        parallel = builder.parallel,
-        statechart = builder.statechart,
-        // members
-        applicationStatechartSpec,
-        applicationStatechart;
-
-    function findState(state, stateId) {
-        function allStates(current) {
-            if (has(current, 'states')) {
-                return enumerable
-                    .make(current)
-                    .concat(enumerable
-                        .from(current.states)
-                        .selectMany(allStates));
-            }
-
-            return enumerable.make(current);
-        }
-
-        var found = allStates(state).firstOrDefault(function (s) { return s.id === stateId; });
-
-        return found;
-    }
-
-
-    function registerState() {
-        return curry(function (parentStateId, stateBuilder) {
-            var state = stateBuilder.toSpec(),
-                parent,
-                existing;
-
-            parent = findState(applicationStatechartSpec, parentStateId);
-            if (!parent) {
-                throw new Error('Parent state "' + parentStateId + '" doesn\'t exist');
-            }
-
-            if (has(state, 'id')) {
-                existing = findState(applicationStatechartSpec, state.id);
-                if (existing) {
-                    throw new Error('State "' + state.id + '" already exists.');
-                }
-            }
-
-            if (!has(parent, 'states')) {
-                parent.states = [];
-            }
-            parent.states.push(state);
-        }).apply(null, arguments);
-    }
-
-    function registerStates(parentStateId) {
-        if (core.isApplicationStarted()) {
-            throw new Error('Can\'t add new state to application that is already running.');
-        }
-
-        toArray(arguments, 1).forEach(registerState(parentStateId));
-    }
-
-    function raise(eventOrName, eventDataOrDelay, delay) {
-        var e;
-        if (is(eventOrName, 'string')) {
-            e = {name: eventOrName};
-        } else {
-            if (!is(eventOrName, 'name')) {
-                throw new Error('event object should have `name` property.');
-            }
-            e = eventOrName;
-        }
-
-        if (!has(delay) && is(eventDataOrDelay, 'number')) {
-            delay = eventDataOrDelay;
-        } else {
-            e.data = eventDataOrDelay;
-        }
-
-        applicationStatechart.send(e, {delay: delay});
-    }
-
-    applicationStatechartSpec = state('scalejs-app', parallel('root')).toSpec();
-
-    core.onApplicationStarted(function () {
-        applicationStatechart = statechart(applicationStatechartSpec);
-        applicationStatechart.start();
-    });
-
-    return {
-        registerStates: registerStates,
-        raise: raise,
-        builder: builder
-    };
-});
-
-
-
-/*global define*/
-define('scalejs.statechart-scion',[
-    'scalejs!core',
-    './scalejs.statechart-scion/state'
-], function (
-    core,
-    state
-) {
-    
-
-    core.registerExtension({ state: state });
-});
-
 

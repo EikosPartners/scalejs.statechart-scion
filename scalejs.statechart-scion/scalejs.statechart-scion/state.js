@@ -54,9 +54,8 @@ define([
 
 
         function registerState() {
-            return curry(function (parentStateId, stateBuilder) {
-                var state = stateBuilder.toSpec(),
-                    parent,
+            return curry(function (parentStateId, state) {
+                var parent,
                     existing;
 
                 parent = findState(applicationStatechartSpec, parentStateId);
@@ -118,7 +117,7 @@ define([
             applicationStatechart.send(e, {delay: delay});
         }
 
-        applicationStatechartSpec = state('scalejs-app', parallel('root')).toSpec();
+        applicationStatechartSpec = state('scalejs-app', parallel('root'));
 
         core.onApplicationEvent(function (event) {
             switch (event) {

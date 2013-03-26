@@ -5,7 +5,9 @@ define([
     'scalejs!core',
     'scalejs!application'
 ], function (core) {
-    var statechart = core.state.builder.statechart,
+    var statechart = core.state.builder.builder({
+            logStatesEnteredAndExited: true
+        }),
         state = core.state.builder.state,
         parallel = core.state.builder.parallel;
 
@@ -102,6 +104,7 @@ define([
             sc.send('t');
             expect(sc.getConfiguration()).toEqual(['d']);
         });
+
 /*
         it('5', function () {
             var sc = statechart({

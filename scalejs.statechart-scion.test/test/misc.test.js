@@ -6,6 +6,11 @@ define([
     'scalejs!application'
 ], function (core) {
     var statechart = core.state.builder.builder({ logStatesEnteredAndExited: true }),
+        goto = core.state.builder.goto,
+        gotoInternally = core.state.builder.gotoInternally,
+        on = core.state.builder.on,
+        onEntry = core.state.builder.onEntry,
+        onExit = core.state.builder.onExit,
         state = core.state.builder.state,
         parallel = core.state.builder.parallel;
 
@@ -15,11 +20,10 @@ define([
                 sc = statechart(
                     parallel('p',
                         state('a',
+                            on('t', goto('a2')),
                             state('a1'),
-                            state('a2'))
-                            .on('t').goto('a2'),
-
-                        state('b').onExit(onExit))
+                            state('a2')),
+                        state('b', onExit(onExit)))
                 );
 
             sc.start();
@@ -35,9 +39,9 @@ define([
                 sc = statechart(
                     parallel('p',
                         state('a',
+                            on('t', gotoInternally('a2')),
                             state('a1'),
-                            state('a2'))
-                        .on('t').gotoInternally('a2'),
+                            state('a2')),
                         state('b').onExit(onExit))
                 );
 
@@ -53,10 +57,10 @@ define([
             var onExit = jasmine.createSpy(),
                 sc = statechart(
                     state('a',
+                        on('t', gotoInternally('b2')),
                         state('b',
                             state('b1'),
                             state('b2')))
-                    .on('t').gotoInternally('b2')
                 );
 
             sc.start();
@@ -72,9 +76,9 @@ define([
                 sc = statechart(
                     state('a',
                         state('b',
+                            on('t', gotoInternally('b2')),
                             state('b1'),
-                            state('b2'))
-                        .on('t').gotoInternally('b2'))
+                            state('b2')))
                 );
 
             sc.start();

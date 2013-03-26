@@ -8,7 +8,8 @@ define([
     var sandbox = core.buildSandbox('scalejs.test'),
         registerStates = sandbox.state.registerStates,
         unregisterStates = sandbox.state.unregisterStates,
-        state = sandbox.state.builder.state;
+        state = sandbox.state.builder.state,
+        onEntry = sandbox.state.builder.onEntry;
         //raise = sandbox.state.raise;
 
     describe('`state` extension', function () {
@@ -18,14 +19,14 @@ define([
         });
 
         it('when a new app state is registered in `root` it gets entered', function () {
-            var onEntry = jasmine.createSpy('onEntry');
+            var f = jasmine.createSpy('onEntry');
             registerStates('root',
                 state('app',
-                    state('module').onEntry(onEntry)));
+                    state('module', onEntry(f))));
 
             application.run();
 
-            expect(onEntry).toHaveBeenCalled();
+            expect(f).toHaveBeenCalled();
 
             application.exit();
 
@@ -37,8 +38,11 @@ define([
                 onEntry2 = jasmine.createSpy('onEntry 2');
 
             registerStates('root',
-                state('app', state('module').onEntry(onEntry1)),
-                state('data').onEntry(onEntry2));
+                state('app', 
+                    onEntry(onEntry1), 
+                    state('module')),
+                state('data',
+                    onEntry(onEntry2)));
 
             application.run();
 

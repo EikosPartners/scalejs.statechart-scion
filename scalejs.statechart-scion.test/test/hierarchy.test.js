@@ -6,15 +6,19 @@ define([
     'scalejs!application'
 ], function (core) {
     var statechart = core.state.builder.statechart,
-        state = core.state.builder.state,
+        goto = core.state.builder.goto,
+        on = core.state.builder.on,
+        onEntry = core.state.builder.onEntry,
+        onExit = core.state.builder.onExit,
+        state = core.state.builder.state,        
         parallel = core.state.builder.parallel;
 
     describe('statechart hierarchy', function () {
         it('0', function () {
             var sc = statechart(
-                    state().goto('a1'),
+                    state(goto('a1')),
                     state('a',
-                        state('a1').on('t').goto('a2'),
+                        state('a1', on('t', goto('a2'))),
                         state('a2'))
                 );
 
@@ -27,10 +31,11 @@ define([
 
         it('1', function () {
             var sc = statechart(
-                    state().goto('a1'),
+                    state(goto('a1')),
                     state('a',
-                        state('a1').on('t').goto('a2'),
-                        state('a2')).on('t').goto('b'),
+                        on('t', goto('b')),
+                        state('a1', on('t', goto('a2'))),
+                        state('a2')),
                     state('b')
                 );
 
@@ -43,10 +48,11 @@ define([
 
         it('2', function () {
             var sc = statechart(
-                    state().goto('a1'),
+                    state(goto('a1')),
                     state('a',
-                        state('a1').on('t').goto('b'),
-                        state('a2')).on('t').goto('a2'),
+                        on('t', goto('a2')),
+                        state('a1', on('t', goto('b'))),
+                        state('a2')),
                     state('b')
                 );
 

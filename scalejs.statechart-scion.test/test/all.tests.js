@@ -1,11 +1,11 @@
 /*global define,jasmine*/
 define([
     'jasmine-html',
-    //'./scalejs.state.test',
-    './builder.test'
-    /*'./raise-inner.test',
-    './raise-outer.test',
+    './scalejs.state.test',
+    './builder.test',
     './basic.test',
+    './raise-inner.test',
+    './raise-outer.test',
     './order.test',
     './hierarchy.test',
     './hierarchy-order.test',
@@ -13,7 +13,7 @@ define([
     './more-parallel.test',
     './assign-current-small-step.test',
     './onEntry.test',
-    './misc.test'*/
+    './misc.test'
 ], function () {
     'use strict';
 

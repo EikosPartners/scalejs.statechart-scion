@@ -6,13 +6,17 @@ define([
     'scalejs!application'
 ], function (core) {
     var statechart = core.state.builder.statechart,
+        goto = core.state.builder.goto,
+        on = core.state.builder.on,
+        onEntry = core.state.builder.onEntry,
+        onExit = core.state.builder.onExit,
         state = core.state.builder.state,
         parallel = core.state.builder.parallel;
 
     describe('satechart parallel', function () {
         it('0', function () {
             var sc = statechart(
-                    state().goto('p'),
+                    state(goto('p')),
                     parallel('p',
                         state('a'),
                         state('b'))
@@ -28,12 +32,12 @@ define([
             var sc = statechart(
                     parallel('p',
                         state('a',
-                            state().goto('a1'),
-                            state('a1').on('t').goto('a2'),
+                            state(goto('a1')),
+                            state('a1', on('t', goto('a2'))),
                             state('a2')),
                         state('b',
-                            state().goto('b1'),
-                            state('b1').on('t').goto('b2'),
+                            state(goto('b1')),
+                            state('b1', on('t', goto('b2'))),
                             state('b2')))
                 );
 
@@ -50,9 +54,9 @@ define([
                     parallel('p1',
                         state('s1',
                             parallel('p2',
+                                on('t', goto('p3')),
                                 state('s3'),
-                                state('s4'))
-                            .on('t').goto('p3'),
+                                state('s4')),
 
                             parallel('p3',
                                 state('s5'),
@@ -60,9 +64,9 @@ define([
 
                         state('s2',
                             parallel('p4',
+                                on('t', goto('p5')),
                                 state('s7'),
-                                state('s8'))
-                            .on('t').goto('p5'),
+                                state('s8')),
 
                             parallel('p5',
                                 state('s9'),
@@ -83,7 +87,7 @@ define([
                         state('s1',
                             parallel('p2',
                                 state('s3',
-                                    state('s3.1').on('t').goto('s3.2'),
+                                    state('s3.1', on('t', goto('s3.2'))),
                                     state('s3.2')),
                                 state('s4')),
 
@@ -93,8 +97,9 @@ define([
 
                         state('s2',
                             parallel('p4',
+                                on('t', goto('p5')),
                                 state('s7'),
-                                state('s8')).on('t').goto('p5'),
+                                state('s8')),
                             parallel('p5',
                                 state('s9'),
                                 state('s10'))))

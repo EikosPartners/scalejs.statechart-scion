@@ -41,8 +41,10 @@ define('scalejs.statechart-scion/state.builder',[
         var array = core.array,
             has = core.object.has,
             is = core.type.is,
+            typeOf = core.type.typeOf,
             merge = core.object.merge,
             builder = core.functional.builder,
+            //$doAction = core.functional.builder.$doAction,
             stateBuilder,
             transitionBuilder,
             state,
@@ -51,7 +53,7 @@ define('scalejs.statechart-scion/state.builder',[
 
         stateBuilder = builder({
             run: function (f, opts) {
-                var s = {};
+                var s = new function state() {};
 
                 if (has(opts, 'parallel')) {
                     s.type = 'parallel';
@@ -61,11 +63,23 @@ define('scalejs.statechart-scion/state.builder',[
 
                 return s;
             },
-
+            /*
             zero: function () {
                 return function () {};
-            },
+            },*/
+            /*
+            bind: function (x, f) {
+                return function (state) {
+                    x(state);
+                    var s = f();
+                    s(state);
+                };
+            },*/
 
+            returnValue: function () {
+                return function (state) {};
+            },
+            
             combine: function (f, g) {
                 return function (state) {
                     f(state);
@@ -88,7 +102,7 @@ define('scalejs.statechart-scion/state.builder',[
                     return expr;
                 }
 
-                if (expr.id) {
+                if (typeOf(expr) === 'state') {
                     return function (state) {
                         if (!state.states) {
                             state.states = [];
@@ -183,7 +197,7 @@ define('scalejs.statechart-scion/state.builder',[
 
         function gotoGeneric(isInternal, targetOrAction, action) {
             return function goto(stateOrTransition) {
-                if (stateOrTransition.id) {
+                if (typeOf(stateOrTransition) === 'state') {
                     return transition(gotoGeneric(isInternal, targetOrAction, action))(stateOrTransition);
                 } 
                 
@@ -226,7 +240,7 @@ define('scalejs.statechart-scion/state.builder',[
                                 'second (optional) argument should be a condition function');
             }
 
-            if (!(typeof action === 'function')) {
+            if (typeof action !== 'function') {
                 throw new Error('Last argument should be either `goto` or a funciton.');
             }
 
@@ -314,10 +328,9 @@ define('scalejs.statechart-scion/state.builder',[
 
         function statechartBuilder(options) {
             return function statechart() {
-                var createSpec = state.apply(null, arguments),
-                    spec = createSpec();
+                var spec = state.apply(null, arguments);
 
-                console.log(spec);
+                //console.log(spec);
 
                 return new scion.Statechart(spec, merge({
                     log: core.log.debug

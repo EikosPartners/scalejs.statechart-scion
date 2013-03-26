@@ -7,11 +7,14 @@ define([
 ], function (core) {
     var statechart = core.state.builder.statechart,
         state = core.state.builder.state,
+        initial = core.state.builder.initial,
+        goto = core.state.builder.goto,
+        on = core.state.builder.on,
         parallel = core.state.builder.parallel;
 
     describe('statechart basic', function () {
         it('0', function () {
-            var sc = statechart({initial: 'a'}, state('a'));
+            var sc = statechart(initial('a'), state('a'));
 
             sc.start();
 
@@ -20,10 +23,12 @@ define([
 
         it('1', function () {
             var sc = statechart(
-                    state('initial1', {initial: true}).goto('a'),
-                    state('a').on('t').goto('b'),
-                    state('b')
-                );
+                state('initial1',
+                    initial(true),
+                    goto('a')),
+                state('a', on('t', goto('b'))),
+                state('b')
+            );
 
 
             sc.start();
@@ -35,9 +40,9 @@ define([
 
         it('2', function () {
             var sc = statechart(
-                    state('initial1', {initial: true}).goto('a'),
-                    state('a').on('t').goto('b'),
-                    state('b').on('t2').goto('c'),
+                    state('initial1', initial(true), goto('a')),
+                    state('a', on('t', goto('b'))),
+                    state('b', on('t2', goto('c'))),
                     state('c')
                 );
 

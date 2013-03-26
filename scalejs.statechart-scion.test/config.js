@@ -8,7 +8,7 @@ var require = {
         "linqjs":  "Scripts/linq.min",
         "scalejs":  "Scripts/scalejs-0.2.7.21",
         "scalejs.linq-linqjs":  "Scripts/scalejs.linq-linqjs-3.0.3",
-        "scalejs.statechart-scion":  "Scripts/scalejs.statechart-scion-0.2.1.23",
+        "scalejs.statechart-scion":  "Scripts/scalejs.statechart-scion-0.2.1.24",
         "scion":  "Scripts/scion"
     },
     "scalejs":  {

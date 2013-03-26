@@ -11,8 +11,11 @@ define([
     return function (config) {
         var array = core.array,
             has = core.object.has,
+            is = core.type.is,
+            typeOf = core.type.typeOf,
             merge = core.object.merge,
             builder = core.functional.builder,
+            //$doAction = core.functional.builder.$doAction,
             stateBuilder,
             transitionBuilder,
             state,
@@ -21,18 +24,30 @@ define([
 
         stateBuilder = builder({
             run: function (f, opts) {
-                var s = {};
+                var s = new function state() {}; //ignore jslint
 
                 if (has(opts, 'parallel')) {
-                    s.parallel = opts.parallel;
+                    s.type = 'parallel';
                 }
 
                 f(s);
 
                 return s;
             },
-
+            /*
             zero: function () {
+                return function () {};
+            },*/
+            /*
+            bind: function (x, f) {
+                return function (state) {
+                    x(state);
+                    var s = f();
+                    s(state);
+                };
+            },*/
+
+            returnValue: function () {
                 return function () {};
             },
 
@@ -58,7 +73,7 @@ define([
                     return expr;
                 }
 
-                if (expr.id) {
+                if (typeOf(expr) === 'state') {
                     return function (state) {
                         if (!state.states) {
                             state.states = [];
@@ -93,7 +108,16 @@ define([
                     f(transition);
                     g(transition);
                 };
+            },
+
+            missing: function (expr) {
+                if (typeof expr === 'function') {
+                    return expr;
+                }
+
+                throw new Error('Missing builder for expression', expr);
             }
+
         });
 
         transition = transitionBuilder();
@@ -142,17 +166,32 @@ define([
             };
         }
 
-        function goto(target) {
-            return function (transition) {
-                transition.target = target;
+        function gotoGeneric(isInternal, targetOrAction, action) {
+            return function goto(stateOrTransition) {
+                if (typeOf(stateOrTransition) === 'state') {
+                    return transition(gotoGeneric(isInternal, targetOrAction, action))(stateOrTransition);
+                }
+
+                if (isInternal) {
+                    stateOrTransition.type = 'internal';
+                }
+                if (typeof targetOrAction === 'function') {
+                    stateOrTransition.onTransition = targetOrAction;
+                } else {
+                    stateOrTransition.target = is(targetOrAction, 'array') ? targetOrAction : [targetOrAction];
+                    if (action) {
+                        stateOrTransition.onTransition = action;
+                    }
+                }
             };
         }
 
-        function gotoInternally(target) {
-            return function (transition) {
-                transition.target = target;
-                transition.type = 'internal';
-            };
+        function goto(target, action) {
+            return gotoGeneric(false, target, action);
+        }
+
+        function gotoInternally(target, action) {
+            return gotoGeneric(true, target, action);
         }
 
         function onTransition(f) {
@@ -172,7 +211,7 @@ define([
                                 'second (optional) argument should be a condition function');
             }
 
-            if (!(typeof action === 'function')) {
+            if (typeof action !== 'function') {
                 throw new Error('Last argument should be either `goto` or a funciton.');
             }
 
@@ -190,7 +229,11 @@ define([
                                 'second (optional) argument should be a condition function');
             });
 
-            return transition.apply(null, params.concat([onTransition(action)]));
+            if (action.name.indexOf('goto') !== 0) {
+                action = onTransition(action);
+            }
+
+            return transition.apply(null, params.concat([action]));
         }
 
         function whenInStates() {
@@ -214,7 +257,7 @@ define([
                         return isIn(state);
                     });
                 }),
-                onTransition(action)
+                action
             );
         }
 
@@ -239,17 +282,26 @@ define([
                         return !isIn(state);
                     });
                 }),
-                onTransition(action)
+                action
             );
         }
         /*jslint unparam: false*/
 
+        function initial(value) {
+            return function (state) {
+                if (state.parallel) {
+                    return new Error('`initial` shouldn\'t be specified on parallel region.');
+                }
+
+                state.initial = value;
+            };
+        }
+
         function statechartBuilder(options) {
             return function statechart() {
-                var createSpec = state.apply(null, arguments),
-                    spec = createSpec();
+                var spec = state.apply(null, arguments);
 
-                console.log(spec);
+                //console.log(spec);
 
                 return new scion.Statechart(spec, merge({
                     log: core.log.debug
@@ -261,6 +313,7 @@ define([
             builder: statechartBuilder,
             state: state,
             parallel: parallel,
+            initial: initial,
             onEntry: onEntry,
             onExit: onExit,
             on: on,

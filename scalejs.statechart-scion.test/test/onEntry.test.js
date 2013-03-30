@@ -7,6 +7,7 @@ define([
 ], function (core) {
     var statechart = core.state.builder.statechart,
         state = core.state.builder.state,
+        onEntry = core.state.builder.onEntry,
         parallel = core.state.builder.parallel;
 
     describe('onEntry', function () {
@@ -15,14 +16,14 @@ define([
                 var calls = [],
                     sc = statechart(
                         parallel('s',
-                            state('a').onEntry(function () { calls.push('a'); }),
-                            state('b').onEntry(function () { calls.push('b'); }))
+                            state('a', onEntry(function () { calls.push('a'); })),
+                            state('b', onEntry(function () { calls.push('b'); })))
                     );
 
                 sc.start();
-                expect(sc.getConfiguration()).toEqual(['a', 'b']);
+                expect(sc.getConfiguration()).toEqual(['b', 'a']);
 
-                expect(calls).toEqual(['a', 'b']);
+                expect(calls).toEqual(['b', 'a']);
             });
         });
     });

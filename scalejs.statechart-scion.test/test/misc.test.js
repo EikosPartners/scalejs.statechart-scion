@@ -16,14 +16,14 @@ define([
 
     describe('misc', function () {
         it('when goto to child state of parallel then sibling is exited', function () {
-            var onExit = jasmine.createSpy(),
+            var f = jasmine.createSpy(),
                 sc = statechart(
                     parallel('p',
                         state('a',
                             on('t', goto('a2')),
                             state('a1'),
                             state('a2')),
-                        state('b', onExit(onExit)))
+                        state('b', onExit(f)))
                 );
 
             sc.start();
@@ -31,18 +31,18 @@ define([
 
             sc.send('t');
             expect(sc.getConfiguration()).toEqual(['a2', 'b']);
-            expect(onExit).toHaveBeenCalled();
+            expect(f).toHaveBeenCalled();
         });
 
         it('when gotoInternally to child state of parallel then sibling is\'t exited', function () {
-            var onExit = jasmine.createSpy(),
+            var f = jasmine.createSpy(),
                 sc = statechart(
                     parallel('p',
                         state('a',
                             on('t', gotoInternally('a2')),
                             state('a1'),
                             state('a2')),
-                        state('b').onExit(onExit))
+                        state('b', onExit(f)))
                 );
 
             sc.start();
@@ -50,7 +50,7 @@ define([
 
             sc.send('t');
             expect(sc.getConfiguration()).toEqual(['b', 'a2']);
-            expect(onExit).not.toHaveBeenCalled();
+            expect(f).not.toHaveBeenCalled();
         });
 
         it('when gotoInternally to grand-child then child exits and enters as well', function () {

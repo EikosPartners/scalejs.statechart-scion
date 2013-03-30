@@ -18,6 +18,7 @@ define([
             var sc = statechart(
                     state(goto('a1')),
                     state('a',
+                        //state('a1', t({event: 't', target: 'a2'}))
                         state('a1', on('t', goto('a2'))),
                         state('a2'))
                 );

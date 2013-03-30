@@ -44,6 +44,7 @@ define('scalejs.statechart-scion/state.builder',[
             typeOf = core.type.typeOf,
             merge = core.object.merge,
             builder = core.functional.builder,
+            $yield = builder.$yield,
             //$doAction = core.functional.builder.$doAction,
             stateBuilder,
             transitionBuilder,
@@ -63,22 +64,18 @@ define('scalejs.statechart-scion/state.builder',[
 
                 return s;
             },
-            /*
+            
+            delay: function (f) {
+                return f();
+            },
+
             zero: function () {
                 return function () {};
-            },*/
-            /*
-            bind: function (x, f) {
-                return function (state) {
-                    x(state);
-                    var s = f();
-                    s(state);
-                };
-            },*/
-
-            returnValue: function () {
-                return function () {};
             },
+
+            $yield: function (f) {
+                return f;
+            }, 
 
             combine: function (f, g) {
                 return function (state) {
@@ -132,6 +129,18 @@ define('scalejs.statechart-scion/state.builder',[
                 };
             },
 
+            delay: function (f) {
+                return f();
+            },
+
+            zero: function () {
+                return function () {};
+            },
+
+            $yield: function (f) {
+                return f;
+            },
+
             combine: function (f, g) {
                 return function (transition) {
                     f(transition);
@@ -144,7 +153,7 @@ define('scalejs.statechart-scion/state.builder',[
                     return expr;
                 }
 
-                throw new Error('Missing builder for expression', expr);
+                throw new Error('Unknown operation "' + expr.kind + '" in transition expression', expr);
             }
 
         });
@@ -152,7 +161,7 @@ define('scalejs.statechart-scion/state.builder',[
         transition = transitionBuilder();
 
         function onEntry(f) {
-            return function (state) {
+            return $yield(function (state) {
                 if (state.onEntry) {
                     throw new Error('Only one `onEntry` action is allowed.');
                 }
@@ -164,11 +173,11 @@ define('scalejs.statechart-scion/state.builder',[
                 state.onEntry = f;
 
                 return state;
-            };
+            });
         }
 
         function onExit(f) {
-            return function (state) {
+            return $yield(function (state) {
                 if (state.onExit) {
                     throw new Error('Only one `onExit` action is allowed.');
                 }
@@ -180,23 +189,23 @@ define('scalejs.statechart-scion/state.builder',[
                 state.onExit = f;
 
                 return state;
-            };
+            });
         }
 
         function event(eventName) {
-            return function (transition) {
+            return $yield(function (transition) {
                 transition.event = eventName;
-            };
+            });
         }
 
         function condition(f) {
-            return function (transition) {
+            return $yield(function (transition) {
                 transition.cond = f;
-            };
+            });
         }
 
         function gotoGeneric(isInternal, targetOrAction, action) {
-            return function goto(stateOrTransition) {
+            return $yield(function goto(stateOrTransition) {
                 if (typeOf(stateOrTransition) === 'state') {
                     return transition(gotoGeneric(isInternal, targetOrAction, action))(stateOrTransition);
                 }
@@ -207,12 +216,12 @@ define('scalejs.statechart-scion/state.builder',[
                 if (typeof targetOrAction === 'function') {
                     stateOrTransition.onTransition = targetOrAction;
                 } else {
-                    stateOrTransition.target = is(targetOrAction, 'array') ? targetOrAction : [targetOrAction];
+                    stateOrTransition.target = is(targetOrAction, 'array') ? targetOrAction : targetOrAction.split(' ');
                     if (action) {
                         stateOrTransition.onTransition = action;
                     }
                 }
-            };
+            });
         }
 
         function goto(target, action) {
@@ -223,10 +232,18 @@ define('scalejs.statechart-scion/state.builder',[
             return gotoGeneric(true, target, action);
         }
 
-        function onTransition(f) {
-            return function (transition) {
-                transition.onTransition = f;
-            };
+        function onTransition(op) {
+            if (typeof op === 'function') {
+                return $yield(function (transition) {
+                    transition.onTransition = op;
+                });
+            }
+
+            if (op.kind === '$yield') {
+                return op;
+            }
+
+            throw new Error('Unsupported transition action', op);
         }
 
         /*jslint unparam: true*/
@@ -240,8 +257,9 @@ define('scalejs.statechart-scion/state.builder',[
                                 'second (optional) argument should be a condition function');
             }
 
-            if (typeof action !== 'function') {
-                throw new Error('Last argument should be either `goto` or a funciton.');
+            if (typeof action !== 'function' &&
+                action.kind !== '$yield') {
+                throw new Error('Last argument should be either `goto` or a function.');
             }
 
             params = args.map(function (a) {
@@ -257,12 +275,12 @@ define('scalejs.statechart-scion/state.builder',[
                                 'First (optional) argument should be event name, ' +
                                 'second (optional) argument should be a condition function');
             });
-
+            /*
             if (action.name.indexOf('goto') !== 0) {
                 action = onTransition(action);
-            }
+            }*/
 
-            return transition.apply(null, params.concat([action]));
+            return $yield(transition.apply(null, params.concat([onTransition(action)])));
         }
 
         function whenInStates() {
@@ -276,18 +294,23 @@ define('scalejs.statechart-scion/state.builder',[
                 }
             });
 
-            if (!(typeof action === 'function')) {
+            //if (!(typeof action === 'function')) {
+            //    throw new Error('Last argument should be either `goto` or a function.');
+            //}
+
+            if (typeof action !== 'function' &&
+                action.kind !== '$yield') {
                 throw new Error('Last argument should be either `goto` or a function.');
             }
 
-            return transition(
+            return $yield(transition(
                 condition(function (e, isIn) {
                     return args.every(function (state) {
                         return isIn(state);
                     });
                 }),
                 action
-            );
+            ));
         }
 
         function whenNotInStates() {
@@ -305,25 +328,25 @@ define('scalejs.statechart-scion/state.builder',[
                 throw new Error('Last argument should be either `goto` or a function.');
             }
 
-            return transition(
+            return $yield(transition(
                 condition(function (e, isIn) {
                     return args.every(function (state) {
                         return !isIn(state);
                     });
                 }),
                 action
-            );
+            ));
         }
         /*jslint unparam: false*/
 
         function initial(value) {
-            return function (state) {
+            return $yield(function (state) {
                 if (state.parallel) {
                     return new Error('`initial` shouldn\'t be specified on parallel region.');
                 }
 
                 state.initial = value;
-            };
+            });
         }
 
         function statechartBuilder(options) {

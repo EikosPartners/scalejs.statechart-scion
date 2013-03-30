@@ -11,7 +11,7 @@ define([
     './hierarchy-order.test',
     './parallel.test',
     './more-parallel.test',
-    './assign-current-small-step.test',
+    //'./assign-current-small-step.test',
     './onEntry.test',
     './misc.test'
 ], function () {

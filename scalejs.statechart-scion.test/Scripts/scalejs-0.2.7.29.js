@@ -25,7 +25,27 @@ define('scalejs',['es5-shim', 'json2'], function () {
 define('scalejs/base.type',[],function () {
     
     function typeOf(obj) {
-        return ({}).toString.call(obj).match(/\s([a-z|A-Z]+)/)[1].toLowerCase();
+        if (obj === undefined) {
+            return 'undefined';
+        }
+
+        if (obj === null) {
+            return 'null';
+        }
+
+        var t = ({}).toString.call(obj).match(/\s([a-z|A-Z]+)/)[1].toLowerCase(),
+            m;
+
+        if (t !== 'object') {
+            return t;
+        }
+
+        m = obj.constructor.toString().match(/^function\s*([$A-Z_][0-9A-Z_$]*)/i);
+        if (m === null) {
+            return 'object';
+        }
+
+        return m[1];
     }
 
     function is(value) {
@@ -457,335 +477,6 @@ define('scalejs/base.log',[
     return self;
 });
 
-/*global define,console,document*/
-/*jslint nomen: true*/
-/**
- * Based on Oliver Steele "Functional Javascript" (http://osteele.com/sources/javascript/functional/)
- **/
-define('scalejs/base.functional',[
-    './base.array'
-], function (
-    array
-) {
-    
-
-    var _ = {};
-
-    function compose() {
-        /// <summary>
-        /// Returns a function that applies the last argument of this
-        /// function to its input, and the penultimate argument to the
-        /// result of the application, and so on.
-        /// == compose(f1, f2, f3..., fn)(args) == f1(f2(f3(...(fn(args...)))))
-        /// :: (a2 -> a1) (a3 -> a2)... (a... -> a_{n}) -> a... -> a1
-        /// >> compose('1+', '2*')(2) -> 5
-        /// </summary>
-        var fns = Array.prototype.slice.call(arguments, 0).reverse();
-
-        return function () {
-            var args = fns.reduce(function (args, fn) {
-                return [fn.apply(undefined, args)];
-            }, Array.prototype.slice.call(arguments));
-
-            return args[0];
-        };
-    }
-
-    function sequence() {
-        /// <summary>
-        /// Same as `compose`, except applies the functions in argument-list order.
-        /// == sequence(f1, f2, f3..., fn)(args...) == fn(...(f3(f2(f1(args...)))))
-        /// :: (a... -> a1) (a1 -> a2) (a2 -> a3)... (a_{n-1} -> a_{n})  -> a... -> a_{n}
-        /// >> sequence('1+', '2*')(2) -> 6
-        /// </summary>
-        var fns = Array.prototype.slice.call(arguments, 0);
-
-        return function () {
-            var args = fns.reduce(function (args, fn) {
-                return [fn.apply(undefined, args)];
-            }, Array.prototype.slice.call(arguments, 0));
-
-            return args[0];
-        };
-    }
-
-    function bind(object, fn) {
-        /// <summary>
-        /// Returns a bound method on `object`, optionally currying `args`.
-        /// == f.bind(obj, args...)(args2...) == f.apply(obj, [args..., args2...])
-        /// </summary>
-        /// <param name="object"></param>
-        var args = Array.prototype.slice.call(arguments, 2);
-        return function () {
-            return fn.apply(object, args.concat(Array.prototype.slice.call(arguments, 0)));
-        };
-    }
-
-    function aritize(fn, n) {
-        /// <summary>
-        /// Invoking the function returned by this function only passes `n`
-        /// arguments to the underlying function.  If the underlying function
-        /// is not saturated, the result is a function that passes all its
-        /// arguments to the underlying function.  (That is, `aritize` only
-        /// affects its immediate caller, and not subsequent calls.)
-        /// >> '[a,b]'.lambda()(1,2) -> [1, 2]
-        /// >> '[a,b]'.lambda().aritize(1)(1,2) -> [1, undefined]
-        /// >> '+'.lambda()(1,2)(3) -> error
-        /// >> '+'.lambda().ncurry(2).aritize(1)(1,2)(3) -> 4
-        ///
-        /// `aritize` is useful to remove optional arguments from a function that
-        /// is passed to a higher-order function that supplies *different* optional
-        /// arguments.
-        ///
-        /// For example, many implementations of `map` and other collection
-        /// functions, call the function argument with both the collection element
-        /// and its position.  This is convenient when expected, but can wreak
-        /// havoc when the function argument is a curried function that expects
-        /// a single argument from `map` and the remaining arguments from when
-        /// the result of `map` is applied.
-        /// </summary>
-        /// <param name="fn"></param>
-        /// <param name="n"></param>
-        return function () {
-            return fn.apply(undefined, Array.prototype.slice.call(arguments, 0, n));
-        };
-    }
-
-    function curry(fn, n) {
-        if (arguments.length === 1) {
-            return curry(fn, fn.length);
-        }
-
-        var largs = Array.prototype.slice.call(arguments, 2);
-
-        if (largs.length >= n) {
-            return fn.apply(undefined, largs);
-        }
-
-        return function () {
-            var args = largs.concat(Array.prototype.slice.call(arguments, 0));
-            args.unshift(fn, n);
-            return curry.apply(undefined, args);
-        };
-    }
-
-    // partial itself is partial, e.g. partial(_, a, _)(f) = partial(f, a, _)
-    function partial() {
-        var args = Array.prototype.slice.call(arguments, 0),
-            subpos = args.reduce(function (blanks, arg, i) {
-                return arg === _ ? blanks.concat([i]) : blanks;
-            }, []);
-
-        if (subpos.length === 0) {
-            return args[0].apply(undefined, args.slice(1));
-        }
-
-        return function () {
-            var //specialized = args.concat(Array.prototype.slice.call(arguments, subpos.length)),
-                i;
-
-            for (i = 0; i < Math.min(subpos.length, arguments.length); i += 1) {
-                args[subpos[i]] = arguments[i];
-            }
-
-            return partial.apply(undefined, args);
-        };
-    }
-
-    function createBuilder() {
-        function builder(opts) {
-            var build;
-
-            function buildContext() {
-                return {};
-            }
-
-            function callExpr(context, expr) {
-                if (!expr || expr.kind !== '$') {
-                    return expr;
-                }
-
-                if (typeof expr.expr === 'function') {
-                    return expr.expr.call(context);
-                }
-
-                if (typeof expr.expr === 'string') {
-                    return context[expr.expr];
-                }
-
-                throw new Error('Parameter in $(...) must be either a function or a string referencing a binding.');
-            }
-
-            function combine(method, context, expr, cexpr) {
-                var e = callExpr(context, expr);
-                return cexpr.length > 0
-                    ? opts.combine(opts[method].call(context, e), build(context, cexpr))
-                    : opts[method].call(context, e);
-            }
-
-            build = function (context, cexpr) {
-                if (cexpr.length === 0) {
-                    return opts.zero();
-                }
-
-                var expr = cexpr.shift();
-
-                if (expr.kind === 'bind') {
-                    context[expr.name] = callExpr(context, expr.expr);
-                    return build(context, cexpr);
-                }
-
-                if (expr.kind === 'do') {
-                    expr.expr.call(context);
-                    return build(context, cexpr);
-                }
-
-                if (expr.kind === '$bind') {
-                    return opts.bind.call(context, callExpr(context, expr.expr), function (bound) {
-                        context[expr.name] = bound;
-                        return build(context, cexpr);
-                    });
-                }
-
-                if (expr.kind === '$do' || expr.kind === '$') {
-                    return opts.bind.call(context, expr.expr.call(context), function () {
-                        return build(context, cexpr);
-                    });
-                }
-
-                if (expr.kind === 'return') {
-                    return combine('returnValue', context, expr.expr, cexpr);
-                }
-
-                if (expr.kind === '$return') {
-                    return combine('returnValueFrom', context, expr.expr, cexpr);
-                }
-
-                if (expr.kind === 'yield') {
-                    return combine('yieldOne', context, expr.expr, cexpr);
-                }
-
-                if (expr.kind === 'yieldMany') {
-                    return combine('yieldMany', context, expr.expr, cexpr);
-                }
-
-                return combine('missing', context, expr, cexpr);
-                //opts.missing.call(context, expr);
-                //return build(context, cexpr);
-            };
-
-            if (!opts.missing) {
-                opts.missing = function (expr) {
-                    if (typeof expr === 'function') {
-                        expr.call(this);
-                    }
-
-                    throw new Error('Unsupported expression "' + expr + '"');
-                };
-            }
-
-            return function () {
-                var args = array.copy(arguments);
-
-                return function () {
-                    var built = build(buildContext(), array.copy(arguments));
-
-                    if (opts.run) {
-                        return opts.run.apply(null, [built].concat(args));
-                    }
-
-                    return built;
-                };
-            };
-        }
-
-        builder.bind = function (name, expr) {
-            return {
-                kind: 'bind',
-                name: name,
-                expr: expr
-            };
-        };
-
-        builder.$bind = function (name, expr) {
-            return {
-                kind: '$bind',
-                name: name,
-                expr: expr
-            };
-        };
-
-        builder.doAction = function (expr) {
-            return {
-                kind: 'do',
-                expr: expr
-            };
-        };
-
-        builder.$doAction = function (expr) {
-            return {
-                kind: '$do',
-                expr: expr
-            };
-        };
-
-        builder.yieldOne = function (expr) {
-            return {
-                kind: 'yield',
-                expr: expr
-            };
-        };
-
-        builder.returnValue = function (expr) {
-            return {
-                kind: 'return',
-                expr: expr
-            };
-        };
-
-        builder.$returnValue = function (expr) {
-            return {
-                kind: '$return',
-                expr: expr
-            };
-        };
-
-        builder.yieldOne = function (expr) {
-            return {
-                kind: 'yield',
-                expr: expr
-            };
-        };
-
-        builder.yieldMany = function (expr) {
-            return {
-                kind: 'yieldMany',
-                expr: expr
-            };
-        };
-
-        builder.$ = function (expr) {
-            return {
-                kind: '$',
-                expr: expr
-            };
-        };
-
-        return builder;
-    }
-
-    return {
-        _: _,
-        compose: compose,
-        sequence: sequence,
-        bind: bind,
-        aritize: aritize,
-        curry: curry,
-        partial: partial,
-        builder: createBuilder()
-    };
-});
-
 /*
  * Minimal base implementation. 
  */
@@ -794,14 +485,12 @@ define('scalejs/base',[
     './base.array',
     './base.log',
     './base.object',
-    './base.type',
-    './base.functional'
+    './base.type'
 ], function (
     array,
     log,
     object,
-    type,
-    functional
+    type
 ) {
     
 
@@ -809,8 +498,7 @@ define('scalejs/base',[
         type: type,
         object: object,
         array: array,
-        log: log,
-        functional: functional
+        log: log
     };
 });
 
@@ -830,7 +518,6 @@ define('scalejs/sandbox',[],function (
             type: core.type,
             log: core.log,
             array: core.array,
-            functional: core.functional,
             onApplicationStarted: core.onApplicationStarted
         };
     }
@@ -963,7 +650,6 @@ define('scalejs/core',[
         object: base.object,
         array: base.array,
         log: base.log,
-        functional: base.functional,
         buildSandbox: buildSandbox,
         notifyApplicationStarted: notifyApplicationStarted,
         notifyApplicationStopped: notifyApplicationStopped,
@@ -989,8 +675,6 @@ define('scalejs/application',[
 
     var addOne = core.array.addOne,
         toArray = core.array.toArray,
-        partial = core.functional.partial,
-        _ = core.functional._,
         has = core.object.has,
         error = core.log.error,
         debug = core.log.debug,
@@ -1009,7 +693,10 @@ define('scalejs/application',[
                             'Dynamic module loading is not supported.');
         }
 
-        modules = toArray(arguments).filter(partial(has, _, 'getModuleId'));
+        //modules = toArray(arguments).filter(partial(has, _, 'getModuleId'));
+        modules = toArray(arguments).filter(function (m) {
+            return has(m, 'getModuleId');
+        });
         Array.prototype.push.apply(moduleRegistrations, modules);
     }
 

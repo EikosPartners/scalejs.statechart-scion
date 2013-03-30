@@ -17,8 +17,8 @@ define([
                     aExit = jasmine.createSpy('`a` onExit'),
                     sc = statechart(
                         state('s',
-                            state('a').onExit(aExit).on('t').goto('a'),
-                            state('b').onExit(bExit)).onExit(sExit)
+                            state('a', onExit(aExit).on('t').goto('a')),
+                            state('b', onExit(bExit)).onExit(sExit))
                     );
 
                 sc.start();
@@ -38,9 +38,10 @@ define([
                     aExit = jasmine.createSpy('`a` onExit'),
                     sc = statechart(
                         state('s',
-                            state('a').onExit(aExit),
-                            state('b').onExit(bExit)
-                            ).onExit(sExit).on('t').gotoInternally('a')
+                            onExit(sExit),
+                            on('t', gotoInternally('a')),
+                            state('a', onExit(aExit))
+                            state('b', onExit(bExit)))
                     );
 
                 sc.start();
@@ -61,10 +62,12 @@ define([
                     aExit = jasmine.createSpy('`child onExit`'),
                     sc = statechart(
                         state('s1',
+                            onExit(s1Exit),
+                            on('t', gotoInternally('a')),
                             state('s2',
-                                state('a').onExit(aExit),
-                                state('b').onExit(bExit)
-                                ).onExit(s2Exit)).onExit(s1Exit).on('t').gotoInternally('a')
+                                onExit(s2Exit),
+                                state('a', onExit(aExit)),
+                                state('b', onExit(bExit))))
                     );
 
                 sc.start();

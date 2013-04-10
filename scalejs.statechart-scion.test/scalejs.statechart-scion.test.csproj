@@ -35,6 +35,9 @@
     <Content Include="Scripts\scalejs.statechart-scion-0.2.1.22.js" />
     <Content Include="Scripts\scalejs.statechart-scion-0.2.1.23.js" />
     <Content Include="Scripts\scalejs.statechart-scion-0.2.1.25.js" />
+    <Content Include="Scripts\scalejs.statechart-scion-0.2.1.28.js" />
+    <Content Include="Scripts\scalejs.statechart-scion-0.2.1.28.min.js" />
+    <Content Include="Scripts\scion.js" />
     <Content Include="test\all.tests.js" />
     <Content Include="test\assign-current-small-step.test.js" />
     <Content Include="test\basic.test.js" />

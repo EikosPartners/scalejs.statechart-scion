@@ -79,7 +79,7 @@ define([
                     };
                 }
 
-                throw new Error('Missing builder for expression', expr);
+                throw new Error('Missing builder for expression: ' + JSON.stringify(expr));
             }
         });
 
@@ -291,7 +291,7 @@ define([
                 }
             });
 
-            if (!(typeof action === 'function')) {
+            if (typeof action !== 'function' && action.kind !== '$yield') {
                 throw new Error('Last argument should be either `goto` or a function.');
             }
 

@@ -3,7 +3,8 @@
 define([
     'scalejs!core',
     './state.builder',
-    'scion'
+    'scion',
+    'scalejs.functional'
 ], function (
     core,
     createBuilder,
@@ -117,6 +118,39 @@ define([
             applicationStatechart.send(e, {delay: delay});
         }
 
+        function observe() {
+            return core.reactive.Observable.create(function (o) {
+                var l = {
+                    onEntry: function (state) {
+                        o.onNext({event: 'entry', state: state});
+                    },
+                    onExit: function (state) {
+                        o.onNext({event: 'exit', state: state});
+                    },
+                    onTransition: function (source, targets) {
+                        o.onNext({event: 'transition', source: source, targets: targets});
+                    }
+                };
+                applicationStatechart.registerListener(l);
+                return function () {
+                    applicationStatechart.unregisterListener(l);
+                };
+            });
+        }
+
+        function onState(state) {
+            return function (complete) {
+                observe()
+                    .where(function (e) {
+                        return e.event === 'entry' && e.state === state;
+                    })
+                    .take(1)
+                    .subscribe(function () {
+                        complete();
+                    });
+            };
+        }
+
         applicationStatechartSpec = state('scalejs-app', parallel('root'));
 
         core.onApplicationEvent(function (event) {
@@ -133,10 +167,13 @@ define([
             }
         });
 
+
         return {
             registerStates: registerStates,
             unregisterStates: unregisterStates,
             raise: raise,
+            observe: observe,
+            onState: onState,
             builder: builder
         };
     };

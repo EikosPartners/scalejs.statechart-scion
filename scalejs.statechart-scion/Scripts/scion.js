@@ -640,11 +640,16 @@
 
                     if (printTrace || this.opts.logStatesEnteredAndExited) this.opts.log("entering", state.id);
 
+                    if (state.onEntry !== undefined) state.onEntry.forEach(evaluateAction);
+
                     this._listeners.forEach(function (l) {
-                        if (l.onEntry) l.onEntry(state.id);
+                        if (l.onEntry) {
+                            evaluateAction(function () {
+                                l.onEntry.call(this, state.id);
+                            });
+                        }
                     });
 
-                    if (state.onEntry !== undefined) state.onEntry.forEach(evaluateAction);
                 }, this);
 
                 if (printTrace) this.opts.log("updating configuration ");

@@ -86,6 +86,17 @@ define([
             toArray(arguments, 1).forEach(registerState(parentStateId));
         }
 
+        function registerTransition(parentStateId, transition) {
+            var parent;
+
+            parent = findState(applicationStatechartSpec, parentStateId);
+            if (!parent) {
+                throw new Error('Parent state "' + parentStateId + '" doesn\'t exist');
+            }
+
+            transition.expr(parent);
+        }
+
         function unregisterStates() {
             if (core.isApplicationRunning()) {
                 throw new Error('Can\'t unregister a state while application is running.');
@@ -101,7 +112,7 @@ define([
         function raise(eventOrName, eventDataOrDelay, delay) {
             var e;
             if (is(eventOrName, 'string')) {
-                e = {name: eventOrName};
+                e = { name: eventOrName };
             } else {
                 if (!is(eventOrName, 'name')) {
                     throw new Error('event object should have `name` property.');
@@ -115,20 +126,20 @@ define([
                 e.data = eventDataOrDelay;
             }
 
-            applicationStatechart.send(e, {delay: delay});
+            applicationStatechart.send(e, { delay: delay });
         }
 
         function observe() {
             return core.reactive.Observable.create(function (o) {
                 var l = {
                     onEntry: function (state) {
-                        o.onNext({event: 'entry', state: state});
+                        o.onNext({ event: 'entry', state: state, context: this });
                     },
                     onExit: function (state) {
-                        o.onNext({event: 'exit', state: state});
+                        o.onNext({ event: 'exit', state: state });
                     },
                     onTransition: function (source, targets) {
-                        o.onNext({event: 'transition', source: source, targets: targets});
+                        o.onNext({ event: 'transition', source: source, targets: targets });
                     }
                 };
                 applicationStatechart.registerListener(l);
@@ -150,26 +161,26 @@ define([
                     });
             };
         }
-
         applicationStatechartSpec = state('scalejs-app', parallel('root'));
 
         core.onApplicationEvent(function (event) {
             switch (event) {
-            case 'started':
-                applicationStatechart = new scion.Statechart(applicationStatechartSpec, {
-                    logStatesEnteredAndExited: config.logStatesEnteredAndExited,
-                    log: core.log.debug
-                });
-                applicationStatechart.start();
-                break;
-            case 'stopped':
-                break;
+                case 'started':
+                    applicationStatechart = new scion.Statechart(applicationStatechartSpec, {
+                        logStatesEnteredAndExited: config.logStatesEnteredAndExited,
+                        log: core.log.debug
+                    });
+                    applicationStatechart.start();
+                    break;
+                case 'stopped':
+                    break;
             }
         });
 
 
         return {
             registerStates: registerStates,
+            registerTransition: registerTransition,
             unregisterStates: unregisterStates,
             raise: raise,
             observe: observe,
@@ -178,5 +189,3 @@ define([
         };
     };
 });
-
-

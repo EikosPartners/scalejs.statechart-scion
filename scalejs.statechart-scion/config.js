@@ -1,9 +1,9 @@
 var require = {
     "paths":  {
-        "scalejs":  "Scripts/scalejs-0.2.4",
+        "scalejs":  "Scripts/scalejs-0.3.0.1",
+        "scalejs.functional":  "empty:",
         "scalejs.linq-linqjs":  "empty:",
-        "scion":  "empty:",
-        "scalejs.functional": "empty:"
+        "scion":  "empty:"
     },
     "scalejs":  {
         "extensions":  [

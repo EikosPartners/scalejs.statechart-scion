@@ -16,13 +16,13 @@ define([
     describe('builder', function () {
         it('empty', function () {
             var spec = state(),
-                expected = {};
+                expected = { type: 'state' };
 
             expect(spec).toEqual(expected);
         });
         
         it('single child state', function () {
-            var expected = { id: 'a' },
+            var expected = { type: 'state', id: 'a' },
                 spec = state('a');
 
             expect(spec).toEqual(expected);
@@ -31,12 +31,16 @@ define([
         
         it('multiple child state', function () {
             var expected = {
+                    type: 'state',
                     id: 'root',
                     states: [{
+                        type: 'state',
                         id: 'a'
                     }, {
+                        type: 'state',
                         id: 'b'
                     }, {
+                        type: 'state',
                         id: 'c'
                     }]
                 },
@@ -50,22 +54,30 @@ define([
         
         it('nested child states', function () {
             var expected = {
+                    type: 'state',
                     id: 'root',
                     states: [{
+                        type: 'state',
                         id: 'a',
                         states: [{
+                            type: 'state',
                             id: 'a1'
                         }, {
+                            type: 'state',
                             id: 'a2'
                         }]
                     }, {
+                        type: 'state',
                         id: 'b',
                         states: [{
+                            type: 'state',
                             id: 'b1'
                         }, {
+                            type: 'state',
                             id: 'b2'
                         }]
                     }, {
+                        type: 'state',
                         id: 'c'
                     }]
                 },
@@ -83,16 +95,22 @@ define([
         
         it('state with onEntry', function () {
             var f = jasmine.createSpy(),
-                expected = {
-                    id: 'root',
-                    states: [{
-                        id: 'a',
-                        onEntry: f
-                    }]
-                },
-                spec = state('root',
-                    state('a', 
-                        onEntry(f)));
+                expected,
+                spec;
+
+            expected = {
+                type: 'state',
+                id: 'root',
+                states: [{
+                    type: 'state',
+                    id: 'a',
+                    onEntry: f
+                }]
+            };
+
+            spec = state('root',
+                state('a', 
+                    onEntry(f)));
 
             expect(spec).toEqual(expected);
         });
@@ -100,8 +118,10 @@ define([
         it('state with onExit', function () {
             var f = jasmine.createSpy(),
                 expected = {
+                    type: 'state',
                     id: 'root',
                     states: [{
+                        type: 'state',
                         id: 'a',
                         onExit: f
                     }]
@@ -115,23 +135,30 @@ define([
         it('state with transition', function () {
             var condition = jasmine.createSpy(),
                 action = jasmine.createSpy(),
-                expected = {
-                    id: 'root',
-                    states: [{
-                        id: 'a',
-                        transitions: [{
-                            event: 't',
-                            cond: condition,
-                            target: ['b'],
-                            onTransition: action
-                        }]
-                    }, {
-                        id: 'b'
+                expected,
+                spec;
+
+            expected = {
+                type: 'state',
+                id: 'root',
+                states: [{
+                    type: 'state',
+                    id: 'a',
+                    transitions: [{
+                        event: 't',
+                        cond: condition,
+                        target: ['b'],
+                        onTransition: action
                     }]
-                },
-                spec = state('root',
-                    state('a', on('t', condition, goto('b', action))),
-                    state('b'));
+                }, {
+                    type: 'state',
+                    id: 'b'
+                }]
+            };
+
+            spec = state('root',
+                state('a', on('t', condition, goto('b', action))),
+                state('b'));
 
             expect(spec).toEqual(expected);
         });
@@ -140,8 +167,10 @@ define([
             var condition = jasmine.createSpy(),
                 action = jasmine.createSpy(),
                 expected = {
+                    type: 'state',
                     id: 'root',
                     states: [{
+                        type: 'state',
                         id: 'a',
                         transitions: [{
                             cond: condition,
@@ -158,14 +187,17 @@ define([
             var condition = jasmine.createSpy(),
                 action = jasmine.createSpy(),
                 expected = {
+                    type: 'state',
                     id: 'root',
                     states: [{
+                        type: 'state',
                         id: 'a',
                         transitions: [{
                             target: ['b'],
                             onTransition: action
                         }]
                     }, {
+                        type: 'state',
                         id: 'b'
                     }]
                 },
@@ -180,8 +212,10 @@ define([
             var condition = jasmine.createSpy(),
                 action = jasmine.createSpy(),
                 expected = {
+                    type: 'state',
                     id: 'root',
                     states: [{
+                        type: 'state',
                         id: 'a',
                         transitions: [{
                             event: 't',
@@ -205,6 +239,7 @@ define([
                             onTransition: action
                         }]
                     }, {
+                        type: 'state',
                         id: 'b'
                     }]
                 },
@@ -224,13 +259,16 @@ define([
         
         it('parallel states', function () {
             var expected = {
+                    type: 'state',
                     id: 'root',
                     states: [{
                         id: 'p',
                         type: 'parallel',
                         states: [{
+                            type: 'state',
                             id: 's1'
                         }, {
+                            type: 'state',
                             id: 's2'
                         }]
                     }]
@@ -245,17 +283,22 @@ define([
 
         it('initial states', function () {
             var expected = {
+                    type: 'state',
                     id: 'root',
                     initial: 'd',
                     states: [{
+                        type: 'state',
                         id: 'a',
                         states: [{
+                            type: 'state',
                             id: 'b',
                             initial: true
                         }, {
+                            type: 'state',
                             id: 'c'
                         }]
                     }, {
+                        type: 'state',
                         id: 'd'
                     }]
                 },

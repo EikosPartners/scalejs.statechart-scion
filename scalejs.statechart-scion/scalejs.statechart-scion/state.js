@@ -165,15 +165,15 @@ define([
 
         core.onApplicationEvent(function (event) {
             switch (event) {
-                case 'started':
-                    applicationStatechart = new scion.Statechart(applicationStatechartSpec, {
-                        logStatesEnteredAndExited: config.logStatesEnteredAndExited,
-                        log: core.log.debug
-                    });
-                    applicationStatechart.start();
-                    break;
-                case 'stopped':
-                    break;
+            case 'started':
+                applicationStatechart = new scion.Statechart(applicationStatechartSpec, {
+                    logStatesEnteredAndExited: config.logStatesEnteredAndExited,
+                    log: core.log.debug
+                });
+                applicationStatechart.start();
+                break;
+            case 'stopped':
+                break;
             }
         });
 

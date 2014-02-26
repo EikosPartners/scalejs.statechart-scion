@@ -1,6 +1,7 @@
 var require = {
     "baseUrl":  ".",
     "paths":  {
+        "es5-shim":  "Scripts/es5-shim",
         "jasmine":  "Scripts/jasmine",
         "jasmine-html":  "Scripts/jasmine-html",
         "json2":  "Scripts/json2",
@@ -14,8 +15,10 @@ var require = {
     "scalejs":  {
         "extensions":  [
             "scalejs.functional",
+            "scalejs.functional",
             "scalejs.linq-linqjs",
             "scalejs.linq-linqjs",
+            "scalejs.statechart-scion",
             "scalejs.statechart-scion"
         ]
     },

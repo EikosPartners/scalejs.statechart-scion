@@ -25,10 +25,11 @@
     <Content Include="Scripts\linq.min.js" />
     <Content Include="Scripts\r.js" />
     <Content Include="Scripts\require.js" />
-    <Content Include="Scripts\scalejs-0.3.0.1.js" />
-    <Content Include="Scripts\scalejs-0.3.0.1.min.js" />
+    <Content Include="Scripts\scalejs-0.3.3.js" />
+    <Content Include="Scripts\scalejs-0.3.3.min.js" />
     <Content Include="Scripts\scalejs.linq-linqjs-3.0.3.js" />
     <Content Include="Scripts\scalejs.linq-linqjs-3.0.3.min.js" />
+    <Content Include="Scripts\scalejs.sandbox.js" />
     <Content Include="Scripts\scion.js" />
     <Content Include="Scripts\_scalejs.intellisense.js" />
     <Content Include="tools\install.ps1" />

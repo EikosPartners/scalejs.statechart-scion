@@ -6,6 +6,8 @@ define('scalejs',[],function () {
 
     return {
         load: function (name, req, load, config) {
+            var moduleNames;
+
             if (name === 'extensions') {
                 if (config.scalejs && config.scalejs.extensions) {
                     extensionNames = config.scalejs.extensions;
@@ -23,23 +25,32 @@ define('scalejs',[],function () {
                 return;
             }
 
-            if (name === 'application') {
+            if (name.indexOf('application') === 0) {
+                moduleNames = name
+                    .substring('application'.length + 1)
+                    .match(/([^,]+)/g) || [];
+
+                moduleNames = moduleNames.map(function (n) {
+                    if (n.indexOf('/') === -1) {
+                        return 'app/' + n + '/' + n + 'Module';
+                    }
+
+                    return n;
+                });
+
+                moduleNames.push('scalejs/application');
+
                 req(['scalejs!extensions'], function () {
-                    req(['scalejs/application'], function (application) {
+                    req(moduleNames, function () {
+                        var application = arguments[arguments.length - 1],
+                            modules = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
+
+                        if (!config.isBuild) {
+                            application.registerModules.apply(null, modules);
+                        }
+
                         load(application);
                     });
-                });
-                return;
-            }
-
-            if (name.indexOf('sandbox') === 0) {
-                req(['scalejs!core', 'scalejs!extensions'], function (core) {
-                    if (config.isBuild) {
-                        load();
-                    } else {
-                        var sandbox = core.buildSandbox(name);
-                        load(sandbox);
-                    }
                 });
                 return;
             }
@@ -50,7 +61,7 @@ define('scalejs',[],function () {
         },
 
         write: function (pluginName, moduleName, write) {
-            if (pluginName === 'scalejs' && moduleName === 'application') {
+            if (pluginName === 'scalejs' && moduleName.indexOf('application') === 0) {
                 write('define("scalejs/extensions", ' + JSON.stringify(extensionNames) + ', function () { return Array.prototype.slice(arguments); })');
             }
         }
@@ -496,11 +507,8 @@ define('scalejs/base.log',[
             });
         }
 
-        if (typeof console.debug === 'function') {
-            self.debug = console.debug.bind(console);
-        } else {
-            self.debug = self.info;
-        }
+        // debug in IE doesn't output arguments with index > 0 so use info instead
+        self.debug = self.info;
     } else {
         logMethods.forEach(function (method) {
             self[method] = function () {};

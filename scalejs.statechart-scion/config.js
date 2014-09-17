@@ -1,6 +1,7 @@
 var require = {
     "paths":  {
-        "scalejs":  "Scripts/scalejs-0.3.0.1",
+        "sandbox":  "Scripts/scalejs.sandbox",
+        "scalejs":  "Scripts/scalejs-0.3.3",
         "scalejs.functional":  "empty:",
         "scalejs.linq-linqjs":  "empty:",
         "scion":  "empty:"

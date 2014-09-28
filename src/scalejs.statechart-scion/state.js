@@ -115,7 +115,7 @@ define([
             if (is(eventOrName, 'string')) {
                 e = { name: eventOrName };
             } else {
-                if (!is(eventOrName, 'name')) {
+                if (!has(eventOrName, 'name')) {
                     throw new Error('event object should have `name` property.');
                 }
                 e = eventOrName;
@@ -166,12 +166,25 @@ define([
         applicationStatechartSpec = state('scalejs-app', parallel('root'));
 
         core.onApplicationEvent(function (event) {
+            var raise;
+
             switch (event) {
             case 'started':
                 applicationStatechart = new scion.Statechart(applicationStatechartSpec, {
                     logStatesEnteredAndExited: config.logStatesEnteredAndExited,
                     log: core.log.debug
                 });
+                // To make compatible with previous version of scion
+                raise = applicationStatechart._scriptingContext.raise;
+                applicationStatechart._scriptingContext.raise = function (eventOrName) {
+                    var event = typeof eventOrName === 'string' ? { name: eventOrName } : eventOrName;
+                    raise.call(applicationStatechart._scriptingContext, event);
+                };
+
+                applicationStatechart.send = function (event, options) {
+                    return applicationStatechart._scriptingContext.send.call(applicationStatechart, event, options || {});
+                };
+
                 applicationStatechart.start();
                 break;
             case 'stopped':

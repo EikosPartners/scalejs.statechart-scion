@@ -26,6 +26,7 @@ define([
             parallel = builder.parallel,
             // members
             applicationStatechartSpec,
+            deferredListeners = [],
             applicationStatechart;
 
         function allStates(current) {
@@ -143,7 +144,11 @@ define([
                         o.onNext({ event: 'transition', source: source, targets: targets, currentEvent: e });
                     }
                 };
-                applicationStatechart.registerListener(l);
+                if (applicationStatechart) {
+                    applicationStatechart.registerListener(l);
+                } else {
+                    deferredListeners.push(l);
+                }
                 return function () {
                     applicationStatechart.unregisterListener(l);
                 };
@@ -184,6 +189,10 @@ define([
                 applicationStatechart.send = function (event, options) {
                     return applicationStatechart._scriptingContext.send.call(applicationStatechart, event, options || {});
                 };
+
+                deferredListeners.forEach(function (l) {
+                    applicationStatechart.registerListener(l);
+                });
 
                 applicationStatechart.start();
                 break;

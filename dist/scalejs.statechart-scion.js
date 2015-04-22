@@ -6,7 +6,7 @@ define('scalejs.statechart-scion/state.builder',[
     core,
     scion
 ) {
-    
+    'use strict';
 
     return function (config) {
         var array = core.array,
@@ -381,7 +381,7 @@ define('scalejs.statechart-scion/state',[
     createBuilder,
     scion
 ) {
-    
+    'use strict';
 
     return function (config) {
         var // imports
@@ -594,7 +594,7 @@ define('scalejs.statechart-scion',[
     state,
     module
 ) {
-    
+    'use strict';
 
     core.registerExtension({ state: state(module.config()) });
 });

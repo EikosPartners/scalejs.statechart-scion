@@ -11,7 +11,7 @@ var require = {
     'scalejs.functional': '../lib/scalejs.functional/dist/scalejs.functional.min',
     'scalejs.linq-linqjs': '../lib/scalejs.linq-linqjs/dist/scalejs.linq-linqjs.min',
     linqjs: '../lib/linqjs/linq',
-    'scion-ng': '../lib/scion-ng/lib/scion'
+    'scion-ng': '../scripts/scion'
   },
   packages: [
 

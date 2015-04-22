@@ -1,6 +1,6 @@
 {
   "name": "scalejs.statechart-scion",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "homepage": "",
   "authors": [],
   "description": "",
@@ -14,8 +14,7 @@
   "dependencies": {
     "scalejs": "lisovin/scalejs",
     "scalejs.functional": "lisovin/scalejs.functional",
-    "scalejs.linq-linqjs": "lisovin/scalejs.linq-linqjs",
-    "scion-ng": "lisovin/scion-ng"
+    "scalejs.linq-linqjs": "lisovin/scalejs.linq-linqjs"
   },
   "devDependencies": {
     "requirejs": "latest"

@@ -8,8 +8,7 @@ module.exports = ( grunt ) ->
             baseUrl: 'src'
             include: '<%=package.name%>'
             exclude: [
-                'scalejs', 
-                'scion-ng', 
+                'scalejs',
                 'scalejs.linq-linqjs', 
                 'scalejs.functional'
             ]

@@ -332,7 +332,7 @@ define([
                     log: core.log.debug
                 }, options));
 
-                // To make compatible with previous version of scion
+                /* To make compatible with previous version of scion
                 raise = statechart._scriptingContext.raise;
                 statechart._scriptingContext.raise = function (eventOrName) {
                     var event = typeof eventOrName === 'string' ? { name: eventOrName } : eventOrName;
@@ -341,7 +341,7 @@ define([
 
                 statechart.send = function (event, options) {
                     return statechart._scriptingContext.send.call(statechart, event, options || {});
-                };
+                };*/
                 return statechart;
             };
         }

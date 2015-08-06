@@ -1603,26 +1603,31 @@ define('scalejs.statechart-scion/state',[
 
             switch (event) {
             case 'started':
-                applicationStatechart = new scion.Statechart(applicationStatechartSpec, {
-                    logStatesEnteredAndExited: config.logStatesEnteredAndExited,
-                    log: core.log.debug
-                });
-                /* To make compatible with previous version of scion
-                raise = applicationStatechart._scriptingContext.raise;
-                applicationStatechart._scriptingContext.raise = function (eventOrName) {
-                    var event = typeof eventOrName === 'string' ? { name: eventOrName } : eventOrName;
-                    raise.call(applicationStatechart._scriptingContext, event);
-                };
+                if(applicationStatechartSpec.states[0].states){
+                    applicationStatechart = new scion.Statechart(applicationStatechartSpec, {
+                        logStatesEnteredAndExited: config.logStatesEnteredAndExited,
+                        log: core.log.debug
+                    });
+                    /* To make compatible with previous version of scion
+                    raise = applicationStatechart._scriptingContext.raise;
+                    applicationStatechart._scriptingContext.raise = function (eventOrName) {
+                        var event = typeof eventOrName === 'string' ? { name: eventOrName } : eventOrName;
+                        raise.call(applicationStatechart._scriptingContext, event);
+                    };
 
-                applicationStatechart.send = function (event, options) {
-                    return applicationStatechart._scriptingContext.send.call(applicationStatechart, event, options || {});
-                };*/
+                    applicationStatechart.send = function (event, options) {
+                        return applicationStatechart._scriptingContext.send.call(applicationStatechart, event, options || {});
+                    };*/
 
-                deferredListeners.forEach(function (l) {
-                    applicationStatechart.registerListener(l);
-                });
+                    deferredListeners.forEach(function (l) {
+                        applicationStatechart.registerListener(l);
+                    });
 
-                applicationStatechart.start();
+                    applicationStatechart.start();
+                    break;
+                }
+                
+                console.log('Statechart expects at least one state to be defined.')
                 break;
             case 'stopped':
                 break;
